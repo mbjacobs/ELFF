@@ -24,6 +24,7 @@ finger_thresh_u=3.8
 radius_thresh=0.04 # factor of width of full frame
 first_iteration=True
 finger_ct_history=[0,0]
+MAX_THRESHOLD_VALUE=255
 
 # Moved the 'Gesture API' here
 class Gesture(object):
@@ -140,8 +141,8 @@ def hand_threshold(frame_in,hand_hist):
     cv2.filter2D(back_projection, -1, disc, back_projection)
     back_projection=cv2.GaussianBlur(back_projection,(gaussian_ksize,gaussian_ksize), gaussian_sigma)
     back_projection=cv2.medianBlur(back_projection,median_ksize)
-    ret, thresh = cv2.threshold(back_projection, hsv_thresh_lower, 255, 0)
-    
+    ret, thresh = cv2.threshold(back_projection, hsv_thresh_lower, MAX_THRESHOLD_VAL, 0) #We can try a new thresholding function here. Also...we're not thresholding with the greyscale image, are we?? We can also try adaptive thresholding.
+
     return thresh
 
 # 3. Find hand contour
@@ -160,7 +161,7 @@ def hand_contour_find(contours):
         h_contour=contours[largest_contour]
         return True,h_contour
 
-# 4. Detect & mark fingers
+# 4. Detect & mark fingers -- NOTE: Uses non-traditional method of finding convex hull defects. 
 def mark_fingers(frame_in,hull,pt,radius):
     global first_iteration
     global finger_ct_history
