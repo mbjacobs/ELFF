@@ -7,7 +7,7 @@ import math
 # Variables & parameters
 # aka a bunch of global bs that is at least all in one place
 hsv_thresh_lower=150
-gaussian_ksize=11
+gaussian_ksize=11 
 gaussian_sigma=0
 morph_elem_size=13
 median_ksize=3
@@ -134,14 +134,14 @@ def hand_capture(frame_in,box_x,box_y):
 def hand_threshold(frame_in,hand_hist):
     frame_in=cv2.medianBlur(frame_in,3)
     hsv=cv2.cvtColor(frame_in,cv2.COLOR_BGR2HSV)
-    hsv[0:int(cap_region_y_end*hsv.shape[0]),0:int(cap_region_x_begin*hsv.shape[1])]=0 # Right half screen only
+    hsv[0:int(cap_region_y_end*hsv.shape[0]),0:int(cap_region_x_begin*hsv.shape[1])]=0 # Right half screen only 
     hsv[int(cap_region_y_end*hsv.shape[0]):hsv.shape[0],0:hsv.shape[1]]=0
     back_projection = cv2.calcBackProject([hsv], [0,1],hand_hist, [00,180,0,256], 1)
     disc = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (morph_elem_size,morph_elem_size))
     cv2.filter2D(back_projection, -1, disc, back_projection)
     back_projection=cv2.GaussianBlur(back_projection,(gaussian_ksize,gaussian_ksize), gaussian_sigma)
     back_projection=cv2.medianBlur(back_projection,median_ksize)
-    ret, thresh = cv2.threshold(back_projection, hsv_thresh_lower, MAX_THRESHOLD_VAL, 0) #We can try a new thresholding function here. Also...we're not thresholding with the greyscale image, are we?? We can also try adaptive thresholding.
+    ret, thresh = cv2.threshold(back_projection, hsv_thresh_lower, MAX_THRESHOLD_VALUE, 0) #We can try a new thresholding function here. Also...we're not thresholding with the greyscale image, are we?? We can also try adaptive thresholding.
 
     return thresh
 
@@ -162,6 +162,7 @@ def hand_contour_find(contours):
         return True,h_contour
 
 # 4. Detect & mark fingers -- NOTE: Uses non-traditional method of finding convex hull defects. 
+#TODO change to traditional method
 def mark_fingers(frame_in,hull,pt,radius):
     global first_iteration
     global finger_ct_history
@@ -251,7 +252,7 @@ def find_gesture(frame_in,finger,palm):
 # 7. Remove bg from image
 
 def remove_bg(frame):
-    fg_mask=bg_model.apply(frame)
+    fg_mask=bg_model.apply(frame, learningRate = 0) # changed learningRate to 0
     kernel = np.ones((3,3),np.uint8)
     fg_mask=cv2.erode(fg_mask,kernel,iterations = 1)
     frame=cv2.bitwise_and(frame,frame,mask=fg_mask)
@@ -293,13 +294,13 @@ while(1):
         frame=hand_threshold(fg_frame,hand_histogram)
         contour_frame=np.copy(frame)
         _, contours, hierarchy = cv2.findContours(contour_frame,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        found,hand_contour=hand_contour_find(contours)
+        found,hand_contour = hand_contour_find(contours)
         if(found):
-            hand_convex_hull=cv2.convexHull(hand_contour)
-            frame,hand_center,hand_radius,hand_size_score=mark_hand_center(frame_original,hand_contour)
+            hand_convex_hull = cv2.convexHull(hand_contour)
+            frame,hand_center,hand_radius,hand_size_score = mark_hand_center(frame_original,hand_contour)
             if(hand_size_score):
-                frame,finger,palm=mark_fingers(frame,hand_convex_hull,hand_center,hand_radius)
-                frame,gesture_found=find_gesture(frame,finger,palm)
+                frame,finger,palm = mark_fingers(frame,hand_convex_hull,hand_center,hand_radius)
+                frame,gesture_found = find_gesture(frame,finger,palm)
                 print (gesture_found)
         else:
             frame=frame_original
@@ -318,7 +319,7 @@ while(1):
             hand_histogram=hand_capture(frame_original,box_pos_x,box_pos_y)
     # Capture background by pressing 'b'
     elif interrupt & 0xFF == ord('b'):
-        bg_model = cv2.createBackgroundSubtractorMOG2(0,10)
+        bg_model = cv2.createBackgroundSubtractorMOG2(0,16, False)
         bg_captured=1
     # Reset captured hand by pressing 'r'
     elif interrupt & 0xFF == ord('r'):
