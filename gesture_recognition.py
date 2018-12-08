@@ -75,8 +75,8 @@ while camera.isOpened():
 	if bBGCaptured is True:
 		bgRemovedFrame = removeBackground(frame)
 		grayFrame = cv2.cvtColor(bgRemovedFrame, cv2.COLOR_BGR2GRAY)
-		blurFrame = cv2.GaussianBlur(grayFrame (gaussian_ksize, gaussian_ksize), gaussian_sigma)
-		threshRV, threshFrame = cv2.threshold(blurFrame, thresholdValue, thresholdMaxValue, cv2.THRESH_BINARY)
+		blurFrame = cv2.GaussianBlur(grayFrame, (gaussian_ksize, gaussian_ksize), gaussian_sigma)
+		threshRV, threshFrame = cv2.threshold(blurFrame, thresholdLowValue, thresholdMaxValue, cv2.THRESH_BINARY)
 		if threshRV is False:
 			print ("cv2.threshold failure")
 		_, contours, _ = cv2.findContours(threshFrame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -86,7 +86,7 @@ while camera.isOpened():
 		calcFingersRV, fingerCount = countFingers(largestContour)
 		if calcFingersRV is False:
 			print("countFingers failure")
-		print(fingerCount)
+		print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
 
 	k = cv2.waitKey(10)
 	if k == 27:  # press ESC to exit
