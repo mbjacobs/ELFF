@@ -63,35 +63,36 @@ bgSubThreshold = 50
 
 
 while camera.isOpened():
-	camReadRV, frame = camera.read()
+    camReadRV, frame = camera.read()
 
-	#Captured image is filtered, rectangle is drawn...
-	if camReadRV is False:
-		print ("CAMERA DID NOT CAPTURE")
-	else:
-		#frame = cv2.bilateralFilter(frame,5,50,100) #smoothing filter (not sure the effect this will have)
-		cv2.rectangle(frame,(int(cap_region_x_begin*frame.shape[1]),0),(frame.shape[1],int(cap_region_y_end*frame.shape[0])),(255,0,0),1)
-		cv2.imshow("show image",frame)
-	if bBGCaptured is True:
-		bgRemovedFrame = removeBackground(frame)
-		grayFrame = cv2.cvtColor(bgRemovedFrame, cv2.COLOR_BGR2GRAY)
-		blurFrame = cv2.GaussianBlur(grayFrame, (gaussian_ksize, gaussian_ksize), gaussian_sigma)
-		threshRV, threshFrame = cv2.threshold(blurFrame, thresholdLowValue, thresholdMaxValue, cv2.THRESH_BINARY)
-		if threshRV is False:
-			print ("cv2.threshold failure")
-		_, contours, _ = cv2.findContours(threshFrame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-		largestContourRV, largestContour = findLargestContour(contours)
-		if largestContourRV is False:
-			print("findLargestContour failure")
-		calcFingersRV, fingerCount = countFingers(largestContour)
-		if calcFingersRV is False:
-			print("countFingers failure")
-		print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
+    #Captured image is filtered, rectangle is drawn...
+    if camReadRV is False:
+        print ("CAMERA DID NOT CAPTURE")
+    else:
+        #frame = cv2.bilateralFilter(frame,5,50,100) #smoothing filter (not sure the effect this will have)
+        cv2.rectangle(frame,(int(cap_region_x_begin*frame.shape[1]),0),(frame.shape[1],int(cap_region_y_end*frame.shape[0])),(255,0,0),1)
+        cv2.imshow("show image",frame)
+    if bBGCaptured is True:
+        bgRemovedFrame = removeBackground(frame)
+        grayFrame = cv2.cvtColor(bgRemovedFrame, cv2.COLOR_BGR2GRAY)
+        blurFrame = cv2.GaussianBlur(grayFrame, (gaussian_ksize, gaussian_ksize), gaussian_sigma)
+        threshRV, threshFrame = cv2.threshold(blurFrame, thresholdLowValue, thresholdMaxValue, cv2.THRESH_BINARY)
+        if threshRV is False:
+            print ("cv2.threshold failure")
+        _, contours, _ = cv2.findContours(threshFrame, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        largestContourRV, largestContour = findLargestContour(contours)
+        if largestContourRV is False:
+            print("findLargestContour failure")
+        else:
+            calcFingersRV, fingerCount = countFingers(largestContour)
+            if calcFingersRV is False:
+                print("countFingers failure")
+            print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
 
-	k = cv2.waitKey(10)
-	if k == 27:  # press ESC to exit
-		break
-	elif k == ord('b'):  # press 'b' to capture the background
-		bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
-		bBGCaptured = True
-		print( '!!!Background Captured!!!')
+    k = cv2.waitKey(10)
+    if k == 27:  # press ESC to exit
+        break
+    elif k == ord('b'):  # press 'b' to capture the background
+        bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
+        bBGCaptured = True
+        print( '!!!Background Captured!!!')
