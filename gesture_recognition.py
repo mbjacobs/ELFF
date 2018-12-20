@@ -53,8 +53,6 @@ def findLargestContour(contours):
 camera = cv2.VideoCapture(0)
 bCaptureDone = False
 bBGCaptured = False
-cap_region_x_begin = 0.5
-cap_region_y_end = 0.8 
 gaussian_ksize = 41 
 gaussian_sigma = 0
 thresholdLowValue = 60
@@ -65,12 +63,9 @@ bgSubThreshold = 50
 while camera.isOpened():
     camReadRV, frame = camera.read()
 
-    #Captured image is filtered, rectangle is drawn...
     if camReadRV is False:
         print ("CAMERA DID NOT CAPTURE")
     else:
-        #frame = cv2.bilateralFilter(frame,5,50,100) #smoothing filter (not sure the effect this will have)
-        cv2.rectangle(frame,(int(cap_region_x_begin*frame.shape[1]),0),(frame.shape[1],int(cap_region_y_end*frame.shape[0])),(255,0,0),1)
         cv2.imshow("show image",frame)
     if bBGCaptured is True:
         bgRemovedFrame = removeBackground(frame)
@@ -96,3 +91,4 @@ while camera.isOpened():
         bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
         bBGCaptured = True
         print( '!!!Background Captured!!!')
+
