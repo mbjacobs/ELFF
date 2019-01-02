@@ -60,39 +60,40 @@ class cvGestures():
             largestContour=contours[largest_contour]
             return True, largestContour
     
-    def main(args):
-        camera = cv.VideoCapture(0)
-        while camera.isOpened():
-            camReadRV, frame = camera.read()
+def main(args):
+    cvGesture = cvGestures()
+    camera = cv.VideoCapture(0)
+    while camera.isOpened():
+        camReadRV, frame = camera.read()
 
-            if camReadRV is False:
-                print ("CAMERA DID NOT CAPTURE")
+        if camReadRV is False:
+            print ("CAMERA DID NOT CAPTURE")
+        else:
+            cv.imshow("show image",frame)
+        if cvGesture.bBGCaptured is True:
+            bgRemovedFrame = removeBackground(frame)
+            grayFrame = cv.cvtColor(bgRemovedFrame, cv.COLOR_BGR2GRAY)
+            blurFrame = cv.GaussianBlur(grayFrame, (cvGesture.gaussian_ksize, cvGesture.gaussian_ksize), cvGesture.gaussian_sigma)
+            threshRV, threshFrame = cv.threshold(blurFrame, cvGesture.thresholdLowValue, cvGesture.thresholdMaxValue, cv.THRESH_BINARY)
+            if threshRV is False:
+                print ("cv2.threshold failure")
+            _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            largestContourRV, largestContour = findLargestContour(contours)
+            if largestContourRV is False:
+                print("findLargestContour failure")
             else:
-                cv.imshow("show image",frame)
-            if bBGCaptured is True:
-                bgRemovedFrame = removeBackground(frame)
-                grayFrame = cv.cvtColor(bgRemovedFrame, cv.COLOR_BGR2GRAY)
-                blurFrame = cv.GaussianBlur(grayFrame, (gaussian_ksize, gaussian_ksize), gaussian_sigma)
-                threshRV, threshFrame = cv.threshold(blurFrame, thresholdLowValue, thresholdMaxValue, cv.THRESH_BINARY)
-                if threshRV is False:
-                    print ("cv2.threshold failure")
-                _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-                largestContourRV, largestContour = findLargestContour(contours)
-                if largestContourRV is False:
-                    print("findLargestContour failure")
-                else:
-                    calcFingersRV, fingerCount = countFingers(largestContour)
-                    if calcFingersRV is False:
-                        print("countFingers failure")
-                    print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
+                calcFingersRV, fingerCount = countFingers(largestContour)
+                if calcFingersRV is False:
+                    print("countFingers failure")
+                print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
 
-            k = cv.waitKey(10)
-            if k == 27:  # press ESC to exit
-                break
-            elif k == ord('b'):  # press 'b' to capture the background
-                bgModel = cv.createBackgroundSubtractorMOG2(0, bgSubThreshold)
-                bBGCaptured = True
-                print( '!!!Background Captured!!!')
+        k = cv.waitKey(10)
+        if k == 27:  # press ESC to exit
+            break
+        elif k == ord('b'):  # press 'b' to capture the background
+            bgModel = cv.createBackgroundSubtractorMOG2(0, cvGesture.bgSubThreshold)
+            bBGCaptured = True
+            print( '!!!Background Captured!!!')
 
 if __name__ == '__main__':
     main(sys.argv)
