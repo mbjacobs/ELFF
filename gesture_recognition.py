@@ -8,14 +8,13 @@ import math
 class cvGestures():
     def __init__(self):
         self.bCaptureDone = False
-        self.bBGCaptured = False
         self.gaussian_ksize = 41 
         self.gaussian_sigma = 0
         self.thresholdLowValue = 60
         self.thresholdMaxValue = 255
         self.bgSubThreshold = 50
 
-    def countFingers(largestContour):  # -> finished bool, counted fingers
+    def countFingers(self, largestContour):  # -> finished bool, counted fingers
         #  convexity defect
         hull = cv.convexHull(largestContour, returnPoints=False)
         if len(hull) > 3:
@@ -37,7 +36,11 @@ class cvGestures():
                 return True, fingerCount
         return False, 0
 
-    def removeBackground(frame): # -> background subtracted frame
+    def captureBackground(self): # -> background model
+        bgModel = cv.createBackgroundSubtractorMOG2(0, self.bgSubThreshold)
+        return bgModel
+
+    def removeBackground(self, bgModel, frame): # -> background subtracted frame
         fg_mask = bgModel.apply(frame, learningRate = 0) # learning rate defines how often the background reinitialized
         kernel = np.ones((3,3),np.uint8)
         fg_mask = cv.erode(fg_mask,kernel,iterations = 1)
@@ -45,7 +48,7 @@ class cvGestures():
         cv.imshow("bg image",frame) # debug
         return frame
 
-    def findLargestContour(contours): # -> found largest bool, largest contour OR 0
+    def findLargestContour(self, contours): # -> found largest bool, largest contour OR 0
         max_area=0
         largest_contour=-1
         for i in range(len(contours)):
@@ -63,6 +66,8 @@ class cvGestures():
 def main(args):
     cvGesture = cvGestures()
     camera = cv.VideoCapture(0)
+    bBGCaptured = False
+
     while camera.isOpened():
         camReadRV, frame = camera.read()
 
@@ -70,28 +75,28 @@ def main(args):
             print ("CAMERA DID NOT CAPTURE")
         else:
             cv.imshow("show image",frame)
-        if cvGesture.bBGCaptured is True:
-            bgRemovedFrame = removeBackground(frame)
+        if bBGCaptured is True:
+            bgRemovedFrame = cvGesture.removeBackground(bgModel, frame)
             grayFrame = cv.cvtColor(bgRemovedFrame, cv.COLOR_BGR2GRAY)
             blurFrame = cv.GaussianBlur(grayFrame, (cvGesture.gaussian_ksize, cvGesture.gaussian_ksize), cvGesture.gaussian_sigma)
             threshRV, threshFrame = cv.threshold(blurFrame, cvGesture.thresholdLowValue, cvGesture.thresholdMaxValue, cv.THRESH_BINARY)
             if threshRV is False:
                 print ("cv2.threshold failure")
             _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-            largestContourRV, largestContour = findLargestContour(contours)
+            largestContourRV, largestContour = cvGesture.findLargestContour(contours)
             if largestContourRV is False:
                 print("findLargestContour failure")
             else:
-                calcFingersRV, fingerCount = countFingers(largestContour)
+                calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
                 if calcFingersRV is False:
                     print("countFingers failure")
                 print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
 
-        k = cv.waitKey(10)
-        if k == 27:  # press ESC to exit
+        keyPress = cv.waitKey(10)
+        if keyPress == 27:  # press ESC to exit
             break
-        elif k == ord('b'):  # press 'b' to capture the background
-            bgModel = cv.createBackgroundSubtractorMOG2(0, cvGesture.bgSubThreshold)
+        elif keyPress == ord('b'):  # press 'b' to capture the background
+            bgModel = cvGesture.captureBackground()
             bBGCaptured = True
             print( '!!!Background Captured!!!')
 
