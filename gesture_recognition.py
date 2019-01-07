@@ -7,7 +7,7 @@ import math
 
 class cvGestures():
     def __init__(self):
-        self.bCaptureDone = False
+        #self.bCaptureDone = False
         self.gaussian_ksize = 41 
         self.gaussian_sigma = 0
         self.thresholdLowValue = 60
@@ -48,19 +48,49 @@ class cvGestures():
         cv.imshow("bg image",frame) # debug
         return frame
 
+    def captureColor(self, frame): # -> color histogram
+        hsvframe = cv.cvtColor (frame, cv.COLOR_BGR2HSV)
+        rows, cols, _ = frame.shape
+        roi = np.zeros([rows / 2, cols / 2], hsv.dtype)
+        #gotta put frame into roi (my way looks trash, pretty sure there is a more pythonic way to do this)
+        #point1 = hsvframe[0.25 * rows, 0.25 * cols]
+        #point2 = hsvframe[0.25 * rows, 0.75 * cols]
+        #point3 = hsvframe[0.75 * rows, 0.25 * cols]
+        #point4 = hsvframe[0.75 * rows, 0.75 * cols]
+        for i in range(rows / 2):
+            for k in range (cols / 2):
+                roi[i, k] = hsvframe[(0.25 * rows) + i, (0.25 * cols) + k]
+
+        color_hist = cv.calcHist([roi], [0,1], None, [180, 256], [0, 180, 0, 256])
+        cv.normalize(color_hist, color_hist, 0, 255, cv.NORM_MINMAX)
+
+        return color_hist
+
+    def applyColorSegmentation(self, frame): 
+        hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+        dst = cv.calcBackProject([hsv], [0,1], hist, [0,180,0,256], 1)
+        disc = cv.getStructuringElement(cv.MORPH_ELLIPSE, (11,11))
+        cv.filter2D(dst, -1, disc, dst)
+        retVal, thresh = cv.threshold(dst, 100, 255, 0)
+        thresh = cv.merge((thresh, thresh, thresh))
+        cv.GaussianBlur(dst, (3,3),0,dst)
+        res = cv.bitwise_and(frame, thresh)
+        return res
+
     def findLargestContour(self, contours): # -> found largest bool, largest contour OR 0
-        max_area=0
-        largest_contour=-1
+        max_area = 0
+        largest_contour = -1
         for i in range(len(contours)):
-            cont=contours[i]
-            area=cv.contourArea(cont)
-            if(area>max_area):
-                max_area=area
-                largest_contour=i
-        if(largest_contour==-1):
+            cont = contours[i]
+            area = cv.contourArea(cont)
+            if area > max_area:
+                max_area = area
+                largest_contour = i
+
+        if largest_contour is -1:
             return False, 0
         else:
-            largestContour=contours[largest_contour]
+            largestContour = contours[largest_contour]
             return True, largestContour
     
 def main(args):
@@ -102,5 +132,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv)
-
-
