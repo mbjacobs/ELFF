@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import getopt
 import cv2 as cv
 import numpy as np
 import math
@@ -45,29 +46,21 @@ class cvGestures():
         kernel = np.ones((3,3),np.uint8)
         fg_mask = cv.erode(fg_mask,kernel,iterations = 1)
         frame = cv.bitwise_and(frame,frame,mask = fg_mask)
-        cv.imshow("bg image",frame) # debug
         return frame
 
     def captureColor(self, frame): # -> color histogram
         hsvframe = cv.cvtColor (frame, cv.COLOR_BGR2HSV)
         rows, cols, _ = frame.shape
-        roi = np.zeros([rows / 2, cols / 2], hsv.dtype)
-        #gotta put frame into roi (my way looks trash, pretty sure there is a more pythonic way to do this)
-        #point1 = hsvframe[0.25 * rows, 0.25 * cols]
-        #point2 = hsvframe[0.25 * rows, 0.75 * cols]
-        #point3 = hsvframe[0.75 * rows, 0.25 * cols]
-        #point4 = hsvframe[0.75 * rows, 0.75 * cols]
-        for i in range(rows / 2):
-            for k in range (cols / 2):
-                roi[i, k] = hsvframe[(0.25 * rows) + i, (0.25 * cols) + k]
+        #roi = np.zeros([rows / 2, cols / 2], hsv.dtype) # not sure if needed
+        roi = hsvframe[rows * 0.25 : rows * 0.75, cols * 0.25 : cols * 0.75] 
 
         color_hist = cv.calcHist([roi], [0,1], None, [180, 256], [0, 180, 0, 256])
         cv.normalize(color_hist, color_hist, 0, 255, cv.NORM_MINMAX)
 
         return color_hist
 
-    def applyColorSegmentation(self, frame): 
-        hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+    def applyColorSegmentation(self, hsv, frame): 
+        #hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
         dst = cv.calcBackProject([hsv], [0,1], hist, [0,180,0,256], 1)
         disc = cv.getStructuringElement(cv.MORPH_ELLIPSE, (11,11))
         cv.filter2D(dst, -1, disc, dst)
@@ -92,43 +85,96 @@ class cvGestures():
         else:
             largestContour = contours[largest_contour]
             return True, largestContour
-    
-def main(args):
+
+def main(argv):
     cvGesture = cvGestures()
     camera = cv.VideoCapture(0)
+    commandlineOptions = "c"
     bBGCaptured = False
+    bColorCaptured = False
+    bColorSegment = False
 
-    while camera.isOpened():
-        camReadRV, frame = camera.read()
+    commandlineArguments = sys.argv
+    argumentList = commandlineArguments[1:]
+    try:
+       arguments, _ = getopt.getopt(argumentList, commandlineOptions)
+    except getopt.error as err:
+        print (str(err))
+        sys.exit(2)
+    for argumentIter in arguments:
+        if argumentIter in ("c"):
+            bColorSegment = True
 
-        if camReadRV is False:
-            print ("CAMERA DID NOT CAPTURE")
-        else:
-            cv.imshow("show image",frame)
-        if bBGCaptured is True:
-            bgRemovedFrame = cvGesture.removeBackground(bgModel, frame)
-            grayFrame = cv.cvtColor(bgRemovedFrame, cv.COLOR_BGR2GRAY)
-            blurFrame = cv.GaussianBlur(grayFrame, (cvGesture.gaussian_ksize, cvGesture.gaussian_ksize), cvGesture.gaussian_sigma)
-            threshRV, threshFrame = cv.threshold(blurFrame, cvGesture.thresholdLowValue, cvGesture.thresholdMaxValue, cv.THRESH_BINARY)
-            if threshRV is False:
-                print ("cv2.threshold failure")
-            _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-            largestContourRV, largestContour = cvGesture.findLargestContour(contours)
-            if largestContourRV is False:
-                print("findLargestContour failure")
+    if bColorSegment is True:
+        while camera.isOpened():
+            camReadRV, frame = camera.read()
+
+            if camReadRV is False:
+                print ("CAMERA DID NOT CAPTURE")
             else:
-                calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
-                if calcFingersRV is False:
-                    print("countFingers failure")
-                print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
+                cv.imshow("show image",frame)
+            if bColorCaptured is True:
+                #bgRemovedFrame = cvGesture.removeBackground(bgModel, frame)
+                #cv.imshow("bg image", bgRemovedFrame) # debug
+                colorSegmentedFrame = cvGesture.applyColorSegmentation(colorHst, frame)
+                cv.imshow("color img", colorSegmentedFrame)
+                grayFrame = cv.cvtColor(bgRemovedFrame, cv.COLOR_BGR2GRAY)
+                blurFrame = cv.GaussianBlur(grayFrame, (cvGesture.gaussian_ksize, cvGesture.gaussian_ksize), cvGesture.gaussian_sigma)
+                threshRV, threshFrame = cv.threshold(blurFrame, cvGesture.thresholdLowValue, cvGesture.thresholdMaxValue, cv.THRESH_BINARY)
+                cv.imshow("thresholded image", threshFrame) # debug
+                if threshRV is False:
+                    print ("cv2.threshold failure")
+                _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+                largestContourRV, largestContour = cvGesture.findLargestContour(contours)
+                if largestContourRV is False:
+                    print("findLargestContour failure")
+                else:
+                    calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
+                    if calcFingersRV is False:
+                        print("countFingers failure")
+                    print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
 
-        keyPress = cv.waitKey(10)
-        if keyPress == 27:  # press ESC to exit
-            break
-        elif keyPress == ord('b'):  # press 'b' to capture the background
-            bgModel = cvGesture.captureBackground()
-            bBGCaptured = True
-            print( '!!!Background Captured!!!')
+            keyPress = cv.waitKey(10)
+            if keyPress == 27:  # press ESC to exit
+                break
+            elif keyPress == ord('b'):  # press 'b' to capture the color
+                colorHst = captureColor(frame)
+                bBGCaptured = True
+                print( '!!!Color Histogram Captured!!!')
+    else:
+        while camera.isOpened():
+            camReadRV, frame = camera.read()
+
+            if camReadRV is False:
+                print ("CAMERA DID NOT CAPTURE")
+            else:
+                cv.imshow("show image",frame)
+            if bBGCaptured is True:
+                bgRemovedFrame = cvGesture.removeBackground(bgModel, frame)
+                cv.imshow("bg image", bgRemovedFrame) # debug
+                grayFrame = cv.cvtColor(bgRemovedFrame, cv.COLOR_BGR2GRAY)
+                blurFrame = cv.GaussianBlur(grayFrame, (cvGesture.gaussian_ksize, cvGesture.gaussian_ksize), cvGesture.gaussian_sigma)
+                threshRV, threshFrame = cv.threshold(blurFrame, cvGesture.thresholdLowValue, cvGesture.thresholdMaxValue, cv.THRESH_BINARY)
+                cv.imshow("thresholded image", threshFrame) # debug
+                if threshRV is False:
+                    print ("cv2.threshold failure")
+                _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+                largestContourRV, largestContour = cvGesture.findLargestContour(contours)
+                if largestContourRV is False:
+                    print("findLargestContour failure")
+                else:
+                    calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
+                    if calcFingersRV is False:
+                        print("countFingers failure")
+                    print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
+
+            keyPress = cv.waitKey(10)
+            if keyPress == 27:  # press ESC to exit
+                break
+            elif keyPress == ord('b'):  # press 'b' to capture the background
+                bgModel = cvGesture.captureBackground()
+                bBGCaptured = True
+                print( '!!!Background Captured!!!')
 
 if __name__ == '__main__':
     main(sys.argv)
