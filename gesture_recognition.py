@@ -94,15 +94,8 @@ def main(argv):
     bColorCaptured = False
     bColorSegment = False
 
-    commandlineArguments = sys.argv
-    argumentList = commandlineArguments[1:]
-    try:
-       arguments, _ = getopt.getopt(argumentList, commandlineOptions)
-    except getopt.error as err:
-        print (str(err))
-        sys.exit(2)
-    for argumentIter in arguments:
-        if argumentIter in ("c"):
+    if len(sys.argv) > 1:
+        if sys.argv[1] in commandlineOptions:
             bColorSegment = True
 
     if bColorSegment is True:
