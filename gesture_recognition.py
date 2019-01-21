@@ -5,15 +5,82 @@ import getopt
 import cv2 as cv
 import numpy as np
 import math
+from enum import Enum
+
+class Gesture(Enum):
+    TOGGLESTART = 1
+    REVERSE = 2
+    LEFT = 3
+    RIGHT = 4
+    GRAB = 5
 
 class cvGestures():
     def __init__(self):
-        #self.bCaptureDone = False
         self.gaussian_ksize = 41 
         self.gaussian_sigma = 0
         self.thresholdLowValue = 60
         self.thresholdMaxValue = 255
         self.bgSubThreshold = 50
+        self.gestureNumberOfFingersGrab = 3
+        self.gestureNumberOfFingersToggleStart = 5
+        self.gestureNumberOfFingersReverseLeftRight = 1
+        self.percentThresholdToQualifyGesture = 0.8
+        self.timeIncrement = 10
+        self.GrabCounter = 0
+        self.ToggleCounter = 0
+        self.ReverseCounter = 0
+        self.LeftCounter = 0
+        self.RightCounter = 0
+
+    def resetCounters(self):
+        self.GrabCounter = 0
+        self.ToggleCounter = 0
+        self.ReverseCounter = 0
+        self.LeftCounter = 0
+        self.RightCounter = 0
+
+    def evaluateGestureOverTime (self):
+        if self.GrabCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+            gesture = Gesture.GRAB
+        elif self.ToggleCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+            gesture = Gesture.TOGGLESTART
+        elif self.ReverseCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+            gesture = Gesture.REVERSE
+        elif self.LeftCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+            gesture = Gesture.LEFT
+        elif self.RightCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+            gesture = Gesture.RIGHT
+        else:
+            gesture = None
+        return gesture
+
+    def countGesture(self, gesture):
+        if gesture is Gesture.TOGGLESTART:
+            self.ToggleCounter += 1
+        elif gesture is Gesture.GRAB:
+            self.GrabCounter += 1
+        elif gesture is Gesture.REVERSE:
+            self.ReverseCounter += 1
+        elif gesture is Gesture.LEFT:
+            self.LeftCounter += 1
+        elif gesture is Gesture.RIGHT:
+            self.RightCounter += 1
+
+    def identifyGesture(self, numFingers, direction):
+        if (numFingers == self.gestureNumberOfFingersToggleStart):
+            gesture = Gesture.TOGGLESTART
+        elif (numFingers == self.gestureNumberOfFingersGrab):
+            gesture = Gesture.GRAB
+        elif (numFingers == self.gestureNumberOfFingersReverseLeftRight):
+            if (direction < -10):
+                gesture = Gesture.RIGHT
+            elif (direction > 10):
+                gesture = Gesture.LEFT
+            else: 
+                gesture = Gesture.REVERSE
+        else:
+            gesture = None
+        return gesture
 
     def countFingers(self, largestContour):  # -> finished bool, counted fingers
         #  convexity defect
@@ -51,27 +118,13 @@ class cvGestures():
     def captureColor(self, frame): # -> color histogram
         hsvframe = cv.cvtColor (frame, cv.COLOR_BGR2HSV)
         rows, cols, _ = frame.shape
-        #roi = np.zeros([rows / 2, cols / 2], dtype = "uint8") # not sure if needed
+        roi = np.zeros([rows / 2, cols / 2], dtype = "uint8") # not sure if needed
         roi = hsvframe[int(rows * 0.25) : int(rows * 0.75), int(cols * 0.25) : int(cols * 0.75)] 
         color_hist = cv.calcHist([roi], [0,1], None, [180, 256], [0, 180, 0, 256])
         cv.normalize(color_hist, color_hist, 0, 255, cv.NORM_MINMAX)
         return color_hist
 
     def applyColorSegmentation(self, roihst, frame): # -> color segmented frame
-        
-        ######try 2
-        #print("applyColorSegmentation")
-        # converted = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-        # skinMask = cv.inRange (converted, hsv[0], hsv[1])
-        # kernel = cv.getStructuringElement (cv.MORPH_ELLIPSE, (11,11))
-        # skinMask = cv.erode (skinMask, kernel, iterations = 2)
-        # skinMask = cv.dilate (skinMask, kernel, iterations = 2)
-        # skinMask = cv.GaussianBlur (skinMask, (3, 3), 0)
-        # skin = cv.bitwise_and (frame, frame, mask = skinMask)
-        # return skin
-        ######
-
-        ####try 1
         hsvframe = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
         dst = cv.calcBackProject([hsvframe], [0,1], roihst, [0,180,0,256], 1)
         disc = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5,5))
@@ -82,7 +135,6 @@ class cvGestures():
         res = cv.bitwise_and(frame, thresh)
         red = np.vstack((frame, thresh, res))
         return res
-        ######
 
     def findLargestContour(self, contours): # -> found largest bool, largest contour OR 0
         max_area = 0
@@ -107,6 +159,7 @@ def main(argv):
     bBGCaptured = False
     bColorCaptured = False
     bColorSegment = False
+    counter = 0
 
     if len(sys.argv) > 1:
         if sys.argv[1] in commandlineOptions:
@@ -131,13 +184,20 @@ def main(argv):
                     print ("cv2.threshold failure")
                 _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
-                if largestContourRV is False:
-                    print("findLargestContour failure")
-                else:
+                if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
                     if calcFingersRV is False:
                         print("countFingers failure")
-                    print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
+                    if (counter <= 60):
+                        counter += 1
+                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
+                    else:
+                        evaluatedGesture = cvGesture.evaluateGestureOverTime()
+                        cvGesture.resetCounters()
+                        if evaluatedGesture is not None:
+                            print (evaluatedGesture)
+
+                    #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount)) # DEBUG print finger count
 
             keyPress = cv.waitKey(10)
             if keyPress == 27:  # press ESC to exit
@@ -165,13 +225,19 @@ def main(argv):
                     print ("cv2.threshold failure")
                 _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
-                if largestContourRV is False:
-                    print("findLargestContour failure")
-                else:
+                if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
                     if calcFingersRV is False:
                         print("countFingers failure")
-                    print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
+                    if (counter <= 60):
+                        counter += 1
+                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
+                    else:
+                        evaluatedGesture = cvGesture.evaluateGestureOverTime()
+                        cvGesture.resetCounters()
+                        if evaluatedGesture is not None:
+                            print (evaluatedGesture)
+                    #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
 
             keyPress = cv.waitKey(10)
             if keyPress == 27:  # press ESC to exit
