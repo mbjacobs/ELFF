@@ -25,7 +25,7 @@ class cvGestures():
         self.gestureNumberOfFingersToggleStart = 5
         self.gestureNumberOfFingersReverseLeftRight = 1
         self.percentThresholdToQualifyGesture = 0.8
-        self.timeIncrement = 10
+        self.timeIncrement = 15
         self.GrabCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
@@ -79,7 +79,7 @@ class cvGestures():
             self.RightCounter += 1
 
     def identifyGesture(self, numFingers, direction):
-        if (numFingers == self.gestureNumberOfFingersToggleStart):
+        if (numFingers >= self.gestureNumberOfFingersToggleStart):
             gesture = Gesture.TOGGLESTART
         elif (numFingers == self.gestureNumberOfFingersGrab):
             gesture = Gesture.GRAB
@@ -202,17 +202,14 @@ def main(argv):
                         print("countFingers failure")
                     if (counter <= cvGesture.timeIncrement):
                         counter += 1
-                        TEST_GESTURE = cvGesture.identifyGesture(fingerCount, 0)
-                        cvGesture.countGesture(TEST_GESTURE)
-                        print(TEST_GESTURE)
+                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
                     else:
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         cvGesture.resetCounters()
                         if evaluatedGesture is not None:
                             print (evaluatedGesture)
-
-                    #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount)) # DEBUG print finger count
-
+                        else:
+                            print(evaluatedGesture)
             keyPress = cv.waitKey(10)
             if keyPress == 27:  # press ESC to exit
                 break
@@ -245,9 +242,7 @@ def main(argv):
                         print("countFingers failure") # debug
                     if (counter <= cvGesture.timeIncrement):
                         counter += 1
-                        TEST_GESTURE = cvGesture.identifyGesture(fingerCount, 0)
-                        cvGesture.countGesture(TEST_GESTURE)
-                        print(TEST_GESTURE)
+                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
                     else:
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         if evaluatedGesture is not None:
