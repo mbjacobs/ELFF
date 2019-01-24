@@ -32,6 +32,18 @@ class cvGestures():
         self.LeftCounter = 0
         self.RightCounter = 0
 
+    def printCounters(self):
+        print("GrabCounter:")
+        print(self.GrabCounter)
+        print("ToggleCounter:")
+        print(self.ToggleCounter)
+        print("ReverseCounter:")
+        print(self.ReverseCounter)
+        print("LeftCounter:")
+        print(self.LeftCounter)
+        print("RightCounter:")
+        print(self.RightCounter)
+
     def resetCounters(self):
         self.GrabCounter = 0
         self.ToggleCounter = 0
@@ -188,9 +200,11 @@ def main(argv):
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
                     if calcFingersRV is False:
                         print("countFingers failure")
-                    if (counter <= 60):
+                    if (counter <= cvGesture.timeIncrement):
                         counter += 1
-                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
+                        TEST_GESTURE = cvGesture.identifyGesture(fingerCount, 0)
+                        cvGesture.countGesture(TEST_GESTURE)
+                        print(TEST_GESTURE)
                     else:
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         cvGesture.resetCounters()
@@ -222,22 +236,26 @@ def main(argv):
                 threshRV, threshFrame = cv.threshold(blurFrame, cvGesture.thresholdLowValue, cvGesture.thresholdMaxValue, cv.THRESH_BINARY)
                 cv.imshow("thresholded image", threshFrame) # debug
                 if threshRV is False:
-                    print ("cv2.threshold failure")
+                    print ("cv2.threshold failure") # debug
                 _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
                 if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
-                    if calcFingersRV is False:
-                        print("countFingers failure")
-                    if (counter <= 60):
+                    if calcFingersRV is False: # debug
+                        print("countFingers failure") # debug
+                    if (counter <= cvGesture.timeIncrement):
                         counter += 1
-                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
+                        TEST_GESTURE = cvGesture.identifyGesture(fingerCount, 0)
+                        cvGesture.countGesture(TEST_GESTURE)
+                        print(TEST_GESTURE)
                     else:
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
-                        cvGesture.resetCounters()
                         if evaluatedGesture is not None:
                             print (evaluatedGesture)
-                    #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount))
+                            cvGesture.printCounters()
+                        counter = 0
+                        cvGesture.resetCounters()
+                    #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount)) # debug
 
             keyPress = cv.waitKey(10)
             if keyPress == 27:  # press ESC to exit
