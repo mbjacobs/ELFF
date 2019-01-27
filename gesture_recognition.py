@@ -14,6 +14,12 @@ class Gesture(Enum):
     RIGHT = 4
     GRAB = 5
 
+class DIRECTION(Enum):
+    NORTH = 1
+    EAST = 2
+    SOUTH = 3
+    WEST = 4
+
 class cvGestures():
     def __init__(self):
         self.gaussian_ksize = 41 
@@ -24,13 +30,44 @@ class cvGestures():
         self.gestureNumberOfFingersGrab = 3
         self.gestureNumberOfFingersToggleStart = 5
         self.gestureNumberOfFingersReverseLeftRight = 1
-        self.percentThresholdToQualifyGesture = 0.8
+        self.percentThresholdToQualifyGesture = 0.6
         self.timeIncrement = 15
         self.GrabCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
         self.LeftCounter = 0
         self.RightCounter = 0
+
+    def findContourCenter(self, contour):
+        moments = cv.moments(contour)
+        centerX = int(moments["m10"] / moments["m00"])
+        centerY = int(moments["m01"] / moments["m00"])
+        return centerX, centerY
+
+    def findExtremePoints(self, contour):
+        extremeWest = tuple(contour[contour[:, :, 0].argmin()][0])
+        extremeEast = tuple(contour[contour[:, :, 0].argmax()][0])
+        extremeNorth = tuple(contour[contour[:, :, 1].argmin()][0])
+        return extremeWest, extremeEast, extremeNorth
+
+    def compareContourCenterWithExtremes(self, contour):
+        centerX, centerY = self.findContourCenter(contour)
+        extremeWest, extremeEast, extremeNorth = self.findExtremePoints(contour)
+
+        #print("centerX: {centerX}, centerY: {centerY}".format(centerX = centerX, centerY=centerY)) # debug
+        #print("extremeWest: {extremeWest}, extremeEast: {extremeEast}, extremeNorth: {extremeNorth}".format(extremeWest = extremeWest, extremeEast = extremeEast, extremeNorth = extremeNorth)) # debug
+
+        maxDifference = max ((centerX - extremeWest[0]), (centerX - extremeEast[0]), (centerY - extremeNorth[1]))
+        if maxDifference == (centerX - extremeWest[0]):
+            direction = DIRECTION.EAST
+        elif maxDifference == (centerX - extremeEast[0]):
+            direction = DIRECTION.WEST
+        elif maxDifference == (centerY - extremeNorth[1]):
+            direction = DIRECTION.NORTH
+        else:
+            return None
+        #print("DIRECTION HERE: {direction}".format(direction = direction)) # debug
+        return direction
 
     def printCounters(self):
         print("GrabCounter:")
@@ -84,12 +121,14 @@ class cvGestures():
         elif (numFingers == self.gestureNumberOfFingersGrab):
             gesture = Gesture.GRAB
         elif (numFingers == self.gestureNumberOfFingersReverseLeftRight):
-            if (direction < -10):
+            if direction is DIRECTION.WEST:
                 gesture = Gesture.RIGHT
-            elif (direction > 10):
+            elif direction is DIRECTION.EAST:
                 gesture = Gesture.LEFT
-            else: 
+            elif direction is DIRECTION.NORTH: 
                 gesture = Gesture.REVERSE
+            else:
+                gesture = None
         else:
             gesture = None
         return gesture
@@ -149,20 +188,10 @@ class cvGestures():
         return res
 
     def findLargestContour(self, contours): # -> found largest bool, largest contour OR 0
-        max_area = 0
-        largest_contour = -1
-        for i in range(len(contours)):
-            cont = contours[i]
-            area = cv.contourArea(cont)
-            if area > max_area:
-                max_area = area
-                largest_contour = i
-
-        if largest_contour is -1:
-            return False, 0
+        if len(contours) > 0:
+            return True, max(contours, key=cv.contourArea)
         else:
-            largestContour = contours[largest_contour]
-            return True, largestContour
+            return False, 0
 
 def main(argv):
     cvGesture = cvGestures()
@@ -172,6 +201,7 @@ def main(argv):
     bColorCaptured = False
     bColorSegment = False
     counter = 0
+    interation = 0
 
     if len(sys.argv) > 1:
         if sys.argv[1] in commandlineOptions:
@@ -198,8 +228,8 @@ def main(argv):
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
                 if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
-                    if calcFingersRV is False:
-                        print("countFingers failure")
+                    # if calcFingersRV is False:
+                    #     print("countFingers failure")
                     if (counter <= cvGesture.timeIncrement):
                         counter += 1
                         cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
@@ -238,16 +268,21 @@ def main(argv):
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
                 if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
-                    if calcFingersRV is False: # debug
-                        print("countFingers failure") # debug
+                    direction = cvGesture.compareContourCenterWithExtremes(largestContour)
                     if (counter <= cvGesture.timeIncrement):
                         counter += 1
-                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
+                        #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount)) # debug
+                        #print("Direction: {direction}".format(direction = direction)) # debug
+                        cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, direction))
                     else:
+                        print ("ITERATION")
+                        print (interation)
+                        interation += 1
+
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         if evaluatedGesture is not None:
                             print (evaluatedGesture)
-                            cvGesture.printCounters()
+                        cvGesture.printCounters()
                         counter = 0
                         cvGesture.resetCounters()
                     #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount)) # debug
