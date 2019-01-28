@@ -281,7 +281,12 @@ def main(argv):
 
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         if evaluatedGesture is not None:
+                            print("####################")
+                            print("EVALULATED GESTURE:")
+                            print("####################")
                             print (evaluatedGesture)
+                            print("####################")
+                            print("####################")
                         cvGesture.printCounters()
                         counter = 0
                         cvGesture.resetCounters()
