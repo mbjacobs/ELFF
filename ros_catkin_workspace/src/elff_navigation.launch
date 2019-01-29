@@ -1,0 +1,15 @@
+<launch>
+
+<node
+    pkg="elff_navigation"
+    type="publisher.py"
+    name="gesture_recognizer"
+/>
+
+<node
+    pkg="elff_navigation"
+    type="subscriber.py"
+    name="mover"
+/>
+
+</launch>
