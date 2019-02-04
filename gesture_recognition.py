@@ -28,7 +28,7 @@ class cvGestures():
         self.thresholdMaxValue = 255
         self.bgSubThreshold = 50
         self.gestureNumberOfFingersGrab = 3
-        self.gestureNumberOfFingersToggleStart = 5
+        self.gestureNumberOfFingersToggleStart = 4
         self.gestureNumberOfFingersReverseLeftRight = 1
         self.percentThresholdToQualifyGesture = 0.6
         self.timeIncrement = 15
@@ -53,20 +53,19 @@ class cvGestures():
     def compareContourCenterWithExtremes(self, contour):
         centerX, centerY = self.findContourCenter(contour)
         extremeWest, extremeEast, extremeNorth = self.findExtremePoints(contour)
+        westFromCenter = abs (centerX - extremeWest[0])
+        eastFromCenter = abs (centerX - extremeEast[0])
+        northFromCenter = abs (centerY - extremeNorth[1])
 
-        #print("centerX: {centerX}, centerY: {centerY}".format(centerX = centerX, centerY=centerY)) # debug
-        #print("extremeWest: {extremeWest}, extremeEast: {extremeEast}, extremeNorth: {extremeNorth}".format(extremeWest = extremeWest, extremeEast = extremeEast, extremeNorth = extremeNorth)) # debug
-
-        maxDifference = max ((centerX - extremeWest[0]), (centerX - extremeEast[0]), (centerY - extremeNorth[1]))
-        if maxDifference == (centerX - extremeWest[0]):
-            direction = DIRECTION.EAST
-        elif maxDifference == (centerX - extremeEast[0]):
+        maxDifference = max (westFromCenter, eastFromCenter, northFromCenter)
+        if maxDifference == westFromCenter:
             direction = DIRECTION.WEST
-        elif maxDifference == (centerY - extremeNorth[1]):
+        elif maxDifference == eastFromCenter:
+            direction = DIRECTION.EAST
+        elif maxDifference == northFromCenter:
             direction = DIRECTION.NORTH
         else:
             return None
-        #print("DIRECTION HERE: {direction}".format(direction = direction)) # debug
         return direction
 
     def printCounters(self):
@@ -228,8 +227,6 @@ def main(argv):
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
                 if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
-                    # if calcFingersRV is False:
-                    #     print("countFingers failure")
                     if (counter <= cvGesture.timeIncrement):
                         counter += 1
                         cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, 0))
@@ -247,7 +244,7 @@ def main(argv):
                 colorHst = cvGesture.captureColor(frame)
                 bColorCaptured = True
                 print( '!!!Color Histogram Captured!!!')
-    else:
+    else: ####################################### BACKGROUND SUBTRACTED
         while camera.isOpened():
             camReadRV, frame = camera.read()
 
@@ -271,27 +268,22 @@ def main(argv):
                     direction = cvGesture.compareContourCenterWithExtremes(largestContour)
                     if (counter <= cvGesture.timeIncrement):
                         counter += 1
-                        #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount)) # debug
-                        #print("Direction: {direction}".format(direction = direction)) # debug
                         cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, direction))
                     else:
-                        print ("ITERATION")
-                        print (interation)
-                        interation += 1
-
+                        print ("ITERATION")# debug
+                        print (interation)# debug
+                        interation += 1 # debug
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         if evaluatedGesture is not None:
-                            print("####################")
-                            print("EVALULATED GESTURE:")
-                            print("####################")
-                            print (evaluatedGesture)
-                            print("####################")
-                            print("####################")
-                        cvGesture.printCounters()
+                            print("####################")# debug
+                            print("EVALULATED GESTURE:")# debug
+                            print("####################")# debug
+                            print (evaluatedGesture)# debug
+                            print("####################")# debug
+                            print("####################")# debug
+                        #cvGesture.printCounters()# debug
                         counter = 0
                         cvGesture.resetCounters()
-                    #print("Finger Count: {fingerCount}".format(fingerCount = fingerCount)) # debug
-
             keyPress = cv.waitKey(10)
             if keyPress == 27:  # press ESC to exit
                 break
