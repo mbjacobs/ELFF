@@ -27,11 +27,11 @@ class cvGestures():
         self.thresholdLowValue = 60
         self.thresholdMaxValue = 255
         self.bgSubThreshold = 50
-        self.gestureNumberOfFingersGrab = 3
-        self.gestureNumberOfFingersToggleStart = 4
+        self.gestureNumberOfFingersGrab = 4
+        self.gestureNumberOfFingersToggleStart = 5
         self.gestureNumberOfFingersReverseLeftRight = 1
-        self.percentThresholdToQualifyGesture = 0.6
-        self.timeIncrement = 15
+        self.percentThresholdToQualifyGesture = 0.8
+        self.timeIncrement = 30
         self.GrabCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
@@ -40,32 +40,41 @@ class cvGestures():
 
     def findContourCenter(self, contour):
         moments = cv.moments(contour)
-        centerX = int(moments["m10"] / moments["m00"])
-        centerY = int(moments["m01"] / moments["m00"])
-        return centerX, centerY
+        if (0 != moments["m00"]):
+            centerX = int(moments["m10"] / moments["m00"])
+            centerY = int(moments["m01"] / moments["m00"])
+            return True, centerX, centerY
+        return False, 0, 0
 
     def findExtremePoints(self, contour):
         extremeWest = tuple(contour[contour[:, :, 0].argmin()][0])
         extremeEast = tuple(contour[contour[:, :, 0].argmax()][0])
         extremeNorth = tuple(contour[contour[:, :, 1].argmin()][0])
-        return extremeWest, extremeEast, extremeNorth
+        extremeSouth = tuple(contour[contour[:, :, 1].argmax()][0])
+        return extremeWest, extremeEast, extremeNorth, extremeSouth
 
     def compareContourCenterWithExtremes(self, contour):
-        centerX, centerY = self.findContourCenter(contour)
-        extremeWest, extremeEast, extremeNorth = self.findExtremePoints(contour)
-        westFromCenter = abs (centerX - extremeWest[0])
-        eastFromCenter = abs (centerX - extremeEast[0])
-        northFromCenter = abs (centerY - extremeNorth[1])
+        findCenterSuccess, centerX, centerY = self.findContourCenter(contour)
+        if (findCenterSuccess):
+            extremeWest, extremeEast, extremeNorth, extremeSouth = self.findExtremePoints(contour)
+            westFromCenter = abs (centerX - extremeWest[0])
+            eastFromCenter = abs (centerX - extremeEast[0])
+            northFromCenter = abs (centerY - extremeNorth[1])
+            southFromCenter = abs (centerY - extremeSouth[1])
 
-        maxDifference = max (westFromCenter, eastFromCenter, northFromCenter)
-        if maxDifference == westFromCenter:
-            direction = DIRECTION.WEST
-        elif maxDifference == eastFromCenter:
-            direction = DIRECTION.EAST
-        elif maxDifference == northFromCenter:
-            direction = DIRECTION.NORTH
+            maxDifference = max (westFromCenter, eastFromCenter, northFromCenter, southFromCenter)
+            if maxDifference == westFromCenter:
+                direction = DIRECTION.WEST
+            elif maxDifference == eastFromCenter:
+                direction = DIRECTION.EAST
+            elif maxDifference == northFromCenter:
+                direction = DIRECTION.NORTH
+            elif maxDifference == southFromCenter:
+                direction = DIRECTION.SOUTH
+            else:
+                direction = None
         else:
-            return None
+            direction = None
         return direction
 
     def printCounters(self):
@@ -115,16 +124,16 @@ class cvGestures():
             self.RightCounter += 1
 
     def identifyGesture(self, numFingers, direction):
-        if (numFingers >= self.gestureNumberOfFingersToggleStart):
+        if (numFingers >= self.gestureNumberOfFingersToggleStart and direction == DIRECTION.NORTH):
             gesture = Gesture.TOGGLESTART
-        elif (numFingers == self.gestureNumberOfFingersGrab):
+        elif (numFingers == self.gestureNumberOfFingersGrab and direction == DIRECTION.SOUTH):
             gesture = Gesture.GRAB
         elif (numFingers == self.gestureNumberOfFingersReverseLeftRight):
-            if direction is DIRECTION.WEST:
+            if direction == DIRECTION.WEST:
                 gesture = Gesture.RIGHT
-            elif direction is DIRECTION.EAST:
+            elif direction == DIRECTION.EAST:
                 gesture = Gesture.LEFT
-            elif direction is DIRECTION.NORTH: 
+            elif direction == DIRECTION.NORTH: 
                 gesture = Gesture.REVERSE
             else:
                 gesture = None
@@ -262,6 +271,7 @@ def main(argv):
                 if threshRV is False:
                     print ("cv2.threshold failure") # debug
                 _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+                largestContourRV = False
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
                 if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
@@ -287,6 +297,8 @@ def main(argv):
             keyPress = cv.waitKey(10)
             if keyPress == 27:  # press ESC to exit
                 break
+            if keyPress == ord('c'): # press 'c' to print counts
+                cvGesture.printCounters()
             elif keyPress == ord('b'):  # press 'b' to capture the background
                 bgModel = cvGesture.captureBackground()
                 bBGCaptured = True
