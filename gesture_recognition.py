@@ -6,13 +6,15 @@ import cv2 as cv
 import numpy as np
 import math
 from enum import Enum
+import rospy 
+from std_msgs.msg import String
 
 class Gesture(Enum):
     TOGGLESTART = 1
     REVERSE = 2
     LEFT = 3
     RIGHT = 4
-    GRAB = 5
+    SCOOP = 5
 
 class DIRECTION(Enum):
     NORTH = 1
@@ -27,12 +29,12 @@ class cvGestures():
         self.thresholdLowValue = 60
         self.thresholdMaxValue = 255
         self.bgSubThreshold = 50
-        self.gestureNumberOfFingersGrab = 4
-        self.gestureNumberOfFingersToggleStart = 5
+        self.gestureNumberOfFingersScoop = 3
+        self.gestureNumberOfFingersToggleStart = 4
         self.gestureNumberOfFingersReverseLeftRight = 1
         self.percentThresholdToQualifyGesture = 0.8
         self.timeIncrement = 30
-        self.GrabCounter = 0
+        self.ScoopCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
         self.LeftCounter = 0
@@ -78,8 +80,8 @@ class cvGestures():
         return direction
 
     def printCounters(self):
-        print("GrabCounter:")
-        print(self.GrabCounter)
+        print("ScoopCounter:")
+        print(self.ScoopCounter)
         print("ToggleCounter:")
         print(self.ToggleCounter)
         print("ReverseCounter:")
@@ -90,15 +92,15 @@ class cvGestures():
         print(self.RightCounter)
 
     def resetCounters(self):
-        self.GrabCounter = 0
+        self.ScoopCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
         self.LeftCounter = 0
         self.RightCounter = 0
 
     def evaluateGestureOverTime (self):
-        if self.GrabCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
-            gesture = Gesture.GRAB
+        if self.ScoopCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+            gesture = Gesture.SCOOP
         elif self.ToggleCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
             gesture = Gesture.TOGGLESTART
         elif self.ReverseCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
@@ -114,8 +116,8 @@ class cvGestures():
     def countGesture(self, gesture):
         if gesture is Gesture.TOGGLESTART:
             self.ToggleCounter += 1
-        elif gesture is Gesture.GRAB:
-            self.GrabCounter += 1
+        elif gesture is Gesture.SCOOP:
+            self.ScoopCounter += 1
         elif gesture is Gesture.REVERSE:
             self.ReverseCounter += 1
         elif gesture is Gesture.LEFT:
@@ -124,10 +126,10 @@ class cvGestures():
             self.RightCounter += 1
 
     def identifyGesture(self, numFingers, direction):
-        if (numFingers >= self.gestureNumberOfFingersToggleStart and direction == DIRECTION.NORTH):
+        if (numFingers >= self.gestureNumberOfFingersToggleStart):
             gesture = Gesture.TOGGLESTART
-        elif (numFingers == self.gestureNumberOfFingersGrab and direction == DIRECTION.SOUTH):
-            gesture = Gesture.GRAB
+        elif (numFingers == self.gestureNumberOfFingersScoop):
+            gesture = Gesture.SCOOP
         elif (numFingers == self.gestureNumberOfFingersReverseLeftRight):
             if direction == DIRECTION.WEST:
                 gesture = Gesture.RIGHT
@@ -201,6 +203,25 @@ class cvGestures():
         else:
             return False, 0
 
+    def publishGesture(self, gesture):
+        rospy.init_node('topic_command_publisher')
+        pub = rospy.Publisher('command', String)
+        if gesture == Gesture.TOGGLESTART:
+            command = "TOGGLESTART"
+        elif gesture == Gesture.REVERSE:
+            command = "REVERSE"
+        elif gesture == Gesture.LEFT:
+            command = "LEFT"
+        elif gesture == Gesture.RIGHT:
+            command = "RIGHT"
+        elif gesture == Gesture.SCOOP:
+            command = "SCOOP"
+        else:
+            command = "NONE"
+        rospy.loginfo(command)
+        pub.publish(command)
+
+
 def main(argv):
     cvGesture = cvGestures()
     camera = cv.VideoCapture(0)
@@ -209,7 +230,7 @@ def main(argv):
     bColorCaptured = False
     bColorSegment = False
     counter = 0
-    interation = 0
+    iteration = 0
 
     if len(sys.argv) > 1:
         if sys.argv[1] in commandlineOptions:
@@ -273,6 +294,7 @@ def main(argv):
                 _, contours, _ = cv.findContours(threshFrame, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
                 largestContourRV = False
                 largestContourRV, largestContour = cvGesture.findLargestContour(contours)
+                iteration += 1 # debug
                 if largestContourRV is True:
                     calcFingersRV, fingerCount = cvGesture.countFingers(largestContour)
                     direction = cvGesture.compareContourCenterWithExtremes(largestContour)
@@ -281,10 +303,11 @@ def main(argv):
                         cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, direction))
                     else:
                         print ("ITERATION")# debug
-                        print (interation)# debug
-                        interation += 1 # debug
+                        print (iteration)# debug
+                        #iteration += 1 # debug
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         if evaluatedGesture is not None:
+                            cvGesture.publishGesture (evaluatedGesture)
                             print("####################")# debug
                             print("EVALULATED GESTURE:")# debug
                             print("####################")# debug
@@ -299,6 +322,8 @@ def main(argv):
                 break
             if keyPress == ord('c'): # press 'c' to print counts
                 cvGesture.printCounters()
+            if keyPress == ord('f'):
+                print(fingerCount)
             elif keyPress == ord('b'):  # press 'b' to capture the background
                 bgModel = cvGesture.captureBackground()
                 bBGCaptured = True
