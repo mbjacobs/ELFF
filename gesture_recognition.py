@@ -204,8 +204,8 @@ class cvGestures():
             return False, 0
 
     def publishGesture(self, gesture):
-        rospy.init_node('topic_command_publisher')
-        pub = rospy.Publisher('command', String)
+        rospy.init_node('topic_command_publisher', anonymous=True)
+        pub = rospy.Publisher('motioncommand', String)
         if gesture == Gesture.TOGGLESTART:
             command = "TOGGLESTART"
         elif gesture == Gesture.REVERSE:
