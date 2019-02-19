@@ -1,0 +1,8 @@
+prefix=/home/pi/Desktop/ELFF/ros_catkin_workspace/devel
+
+Name: elff_navigation
+Description: Description of elff_navigation
+Version: 1.0.0
+Cflags: 
+Libs: -L/home/pi/Desktop/ELFF/ros_catkin_workspace/devel/lib 
+Requires: 
