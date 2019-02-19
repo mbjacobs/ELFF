@@ -1,8 +1,0 @@
-prefix=/home/dave/Desktop/ros_workspace/install
-
-Name: beginner_tutorials
-Description: Description of beginner_tutorials
-Version: 0.1.0
-Cflags: 
-Libs: -L/home/dave/Desktop/ros_workspace/install/lib 
-Requires: 

@@ -54,7 +54,7 @@ CMAKE_BINARY_DIR = /home/pi/Desktop/ELFF/ros_catkin_workspace/build
 include CMakeFiles/clean_test_results.dir/progress.make
 
 CMakeFiles/clean_test_results:
-	/usr/bin/python /opt/ros/kinetic/-DCMAKE_BUILD_TYPE=Release/share/catkin/cmake/test/remove_test_results.py /home/pi/Desktop/ELFF/ros_catkin_workspace/build/test_results
+	/usr/bin/python /opt/ros/kinetic/share/catkin/cmake/test/remove_test_results.py /home/pi/Desktop/ELFF/ros_catkin_workspace/build/test_results
 
 clean_test_results: CMakeFiles/clean_test_results
 clean_test_results: CMakeFiles/clean_test_results.dir/build.make

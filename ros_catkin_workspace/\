@@ -9,7 +9,7 @@ from std_msgs.msg import String  #MJ012019: Don't know for sure if I need this, 
 from socket import *
 from time import ctime          # Import necessary modules
 
-ctrl_cmd = ['TOGGLESTART', 'REVERSE', 'LEFT', 'RIGHT', 'SCOOP', 'read cpu_temp', 'home', 'distance', 'x+', 'x-', 'y+', 'y-', 'xy_home']
+ctrl_cmd = ['forward', 'backward', 'left', 'right', 'stop', 'read cpu_temp', 'home', 'distance', 'x+', 'x-', 'y+', 'y-', 'xy_home']
 
 busnum = 1          # Edit busnum to 0, if you uses Raspberry Pi 1 or 0
 
@@ -53,23 +53,23 @@ def mover ():
                     if not data:
                             break
                     if data == ctrl_cmd[0]:
-                            print 'ELLF WILL DRIVE'
+                            print 'motor moving forward'
                             #motor.forward()
                             counter += 1 #Debug
                     elif data == ctrl_cmd[1]:
-                            print 'ELFF WILL REVERSE'
+                            print 'recv backward cmd'
                             #motor.backward()
                     elif data == ctrl_cmd[2]:
-                            print 'ELFF WILL GO LEFT'
+                            print 'recv left cmd'
                             #car_dir.turn_left()
                     elif data == ctrl_cmd[3]:
-                            print 'ELFF WILL GO RIGHT'
+                            print 'recv right cmd'
                             #car_dir.turn_right()
                     elif data == ctrl_cmd[6]:
                             print 'recv home cmd'
                             #car_dir.home()
-                    elif data == ctrl_cmd[4:
-                            print 'ELFF WILL SCOOP'
+                    elif data == ctrl_cmd[4]:
+                            print 'recv stop cmd'
                             #motor.ctrl(0)
                     elif data == ctrl_cmd[5]:
                             print 'read cpu temp...'
@@ -127,8 +127,9 @@ def mover ():
                     #                print 'ERROR, speed =', spd
 
                     else:
-                            print 'Command Error! Cannot recognize command: ' + sRobotDirection.directionMsg
+                            print 'Command Error! Cannot recognize command: ' #+ data
     rospy.spin ()
 
 if __name__=='__main__':
     mover ()
+

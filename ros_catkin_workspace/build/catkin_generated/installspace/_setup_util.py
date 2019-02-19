@@ -262,7 +262,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
         # environment at generation time
-        CMAKE_PREFIX_PATH = '/opt/ros/kinetic/-DCMAKE_BUILD_TYPE=Release;/opt/ros/kinetic'.split(';')
+        CMAKE_PREFIX_PATH = '/home/pi/test_catkin_ws/devel;/home/pi/Desktop/ELFF/ros_catkin_workspace/devel;/opt/ros/kinetic'.split(';')
         # prepend current workspace if not already part of CPP
         base_path = os.path.dirname(__file__)
         if base_path not in CMAKE_PREFIX_PATH:

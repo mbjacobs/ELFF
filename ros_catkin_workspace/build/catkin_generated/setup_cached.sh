@@ -7,7 +7,5 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/pi/Desktop/ELFF/ros_catkin_workspace/devel:$CMAKE_PREFIX_PATH"
+export PKG_CONFIG_PATH="/home/pi/test_catkin_ws/devel/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PWD="/home/pi/Desktop/ELFF/ros_catkin_workspace/build"
-export ROSLISP_PACKAGE_DIRECTORIES="/home/pi/Desktop/ELFF/ros_catkin_workspace/devel/share/common-lisp"
-export ROS_PACKAGE_PATH="/home/pi/Desktop/ELFF/ros_catkin_workspace/src:$ROS_PACKAGE_PATH"
