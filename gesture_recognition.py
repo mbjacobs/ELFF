@@ -26,14 +26,14 @@ class cvGestures():
     def __init__(self):
         self.gaussian_ksize = 41 
         self.gaussian_sigma = 0
-        self.thresholdLowValue = 60
+        self.thresholdLowValue = 30 #60
         self.thresholdMaxValue = 255
         self.bgSubThreshold = 50
-        self.gestureNumberOfFingersScoop = 3
-        self.gestureNumberOfFingersToggleStart = 4
+        self.gestureNumberOfFingersScoop = 4
+        self.gestureNumberOfFingersToggleStart = 5
         self.gestureNumberOfFingersReverseLeftRight = 1
-        self.percentThresholdToQualifyGesture = 0.8
-        self.timeIncrement = 30
+        self.percentThresholdToQualifyGesture = 0.9
+        self.timeIncrement = 15
         self.ScoopCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
@@ -150,7 +150,7 @@ class cvGestures():
             defects = cv.convexityDefects(largestContour, hull)
             if type(defects) != type(None):  
 
-                fingerCount = 0
+                fingerCount = 1
                 for i in range(defects.shape[0]):  # calculate the angle
                     startPoint, endPoint, farthestPoint, distanceApprox = defects[i][0]
                     start = tuple(largestContour[startPoint][0])
@@ -307,7 +307,7 @@ def main(argv):
                         #iteration += 1 # debug
                         evaluatedGesture = cvGesture.evaluateGestureOverTime()
                         if evaluatedGesture is not None:
-                            cvGesture.publishGesture (evaluatedGesture)
+                            #cvGesture.publishGesture (evaluatedGesture)
                             print("####################")# debug
                             print("EVALULATED GESTURE:")# debug
                             print("####################")# debug
