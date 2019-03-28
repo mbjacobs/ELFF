@@ -33,7 +33,7 @@ class cvGestures():
         self.gestureNumberOfFingersToggleStart = 5
         self.gestureNumberOfFingersReverseLeftRight = 1
         self.percentThresholdToQualifyGesture = 0.9
-        self.timeIncrement = 15
+        self.timeIncrement = 5
         self.ScoopCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
