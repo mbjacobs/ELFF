@@ -34,19 +34,23 @@ class cvGestures():
         self.gestureNumberOfFingersToggleStart = 5
         self.gestureNumberOfFingersReverseLeftRight = 1
         self.percentThresholdToQualifyGesture = 0.9
-        self.timeIncrement = 10
+        self.timeIncrement = 20
 
         self.ScoopCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
         self.LeftCounter = 0
         self.RightCounter = 0
-        self.CommandTuple = (  (Command.START, "START", ToggleCounter),
-                                (Command.REVERSE, "REVERSE", ReverseCounter),
-                                (Command.LEFT, "LEFT", LeftCounter),
-                                (Command.RIGHT, "RIGHT", RightCounter),
-                                (Command.SCOOP, "SCOOP", ScoopCounter),
-                                (Command.STOP, "STOP", ToggleCounter))                                )
+        self.CommandTuple = (  [Command.START, "START", self.ToggleCounter],
+                               [Command.REVERSE, "REVERSE", self.ReverseCounter],
+                               [Command.LEFT, "LEFT", self.LeftCounter],
+                               [Command.RIGHT, "RIGHT", self.RightCounter],
+                               [Command.SCOOP, "SCOOP", self.ScoopCounter],
+                               [Command.STOP, "STOP", self.ToggleCounter]
+                            )
+        self.CmdTupleCommand = 0
+        self.CmdTupleString = 1
+        self.CmdTupleCounter = 2                               
 
     def findContourCenter(self, contour):
         moments = cv.moments(contour)
@@ -87,43 +91,6 @@ class cvGestures():
             direction = None
         return direction
 
-    def resetCounters(self):
-        self.ScoopCounter = 0
-        self.ToggleCounter = 0
-        self.ReverseCounter = 0
-        self.LeftCounter = 0
-        self.RightCounter = 0
-
-    def evaluateGestureOverTime (self):
-        gesture = None
-        for i in self.CommandTuple:
-            if i[2] >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
-                gesture = i
-        return gesture
-
-    def countGesture(self, gesture):
-        for i in self.CommandTuple:
-            if gesture in i[0]:
-                i[2] += 1
-            
-    def identifyGesture(self, numFingers, direction):
-        if (numFingers >= self.gestureNumberOfFingersToggleStart):
-            gesture = Command.START
-        elif (numFingers == self.gestureNumberOfFingersScoop):
-            gesture = Command.SCOOP
-        elif (numFingers == self.gestureNumberOfFingersReverseLeftRight):
-            if direction == DIRECTION.WEST:
-                gesture = Command.RIGHT
-            elif direction == DIRECTION.EAST:
-                gesture = Command.LEFT
-            elif direction == DIRECTION.NORTH: 
-                gesture = Command.REVERSE
-            else:
-                gesture = None
-        else:
-            gesture = None
-        return gesture
-
     def countFingers(self, largestContour):  # -> finished bool, counted fingers
         #  convexity defect
         hull = cv.convexHull(largestContour, returnPoints=False)
@@ -146,6 +113,44 @@ class cvGestures():
                 return True, fingerCount
         return False, 0
 
+    def findLargestContour(self, contours): # -> found largest bool, largest contour OR 0
+        if len(contours) > 0:
+            return True, max(contours, key=cv.contourArea)
+        else:
+            return False, 0
+
+    def evaluateGestureOverTime (self):
+        gesture = None
+        for i in self.CommandTuple:
+            if i[self.CmdTupleCounter] >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+                gesture = i
+                ############FIX HERE????
+        return gesture
+
+    def countGesture(self, gesture):
+        if gesture != None:
+            for i in self.CommandTuple:
+                if gesture == i[self.CmdTupleCommand]:
+                    i[self.CmdTupleCounter] += 1
+            
+    def identifyGesture(self, numFingers, direction):
+        if (numFingers >= self.gestureNumberOfFingersToggleStart):
+            gesture = Command.START
+        elif (numFingers == self.gestureNumberOfFingersScoop):
+            gesture = Command.SCOOP
+        elif (numFingers == self.gestureNumberOfFingersReverseLeftRight):
+            if direction == DIRECTION.WEST:
+                gesture = Command.RIGHT
+            elif direction == DIRECTION.EAST:
+                gesture = Command.LEFT
+            elif direction == DIRECTION.NORTH: 
+                gesture = Command.REVERSE
+            else:
+                gesture = None
+        else:
+            gesture = None
+        return gesture
+
     def captureBackground(self): # -> background model
         bgModel = cv.createBackgroundSubtractorMOG2(0, self.bgSubThreshold)
         return bgModel
@@ -157,12 +162,6 @@ class cvGestures():
         frame = cv.bitwise_and(frame,frame,mask = fg_mask)
         return frame
 
-    def findLargestContour(self, contours): # -> found largest bool, largest contour OR 0
-        if len(contours) > 0:
-            return True, max(contours, key=cv.contourArea)
-        else:
-            return False, 0
-
     def publishGesture(self, gesture):
         rospy.init_node('topic_command_publisher', anonymous=True)
         pub = rospy.Publisher('motioncommand', String)
@@ -170,18 +169,21 @@ class cvGestures():
         rospy.loginfo(command)
         pub.publish(command)
 
+    def resetCounters(self):
+        for i in self.CommandTuple:
+            i[self.CmdTupleCounter] = 0
+  
     def printCounters(self):
-        print("ScoopCounter:")
-        print(self.ScoopCounter)
         print("ToggleCounter:")
-        print(self.ToggleCounter)
+        print(self.CommandTuple[0][2])
         print("ReverseCounter:")
-        print(self.ReverseCounter)
+        print(self.CommandTuple[1][2])
         print("LeftCounter:")
-        print(self.LeftCounter)
+        print(self.CommandTuple[2][2])
         print("RightCounter:")
-        print(self.RightCounter)
-
+        print(self.CommandTuple[3][2])
+        print("ScoopCounter:")
+        print(self.CommandTuple[4][2])
 
 def main(argv):
     cvGesture = cvGestures()
@@ -215,16 +217,16 @@ def main(argv):
                     counter += 1
                     cvGesture.countGesture(cvGesture.identifyGesture(fingerCount, direction))
                 else:
+                    print("####################")# debug
                     print ("ITERATION")# debug
                     print (iteration)# debug
                     evaluatedGesture = cvGesture.evaluateGestureOverTime()
-                    if evaluatedGesture is not None and evaluatedGesture:
-                        cvGesture.publishGesture (evaluatedGesture)
-                        print("####################")# debug
+                    if evaluatedGesture is not None:
+                        #cvGesture.publishGesture (evaluatedGesture)
                         print("EVALULATED GESTURE:")# debug
-                        print (evaluatedGesture)# debug
-
+                        print (evaluatedGesture[1])# debug
                     counter = 0
+                    cvGesture.printCounters()
                     cvGesture.resetCounters()
         keyPress = cv.waitKey(10)
         if keyPress == 27:  # press ESC to exit
