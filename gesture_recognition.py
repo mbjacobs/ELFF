@@ -50,7 +50,8 @@ class cvGestures():
                             )
         self.CmdTupleCommand = 0
         self.CmdTupleString = 1
-        self.CmdTupleCounter = 2                               
+        self.CmdTupleCounter = 2  
+        self.HasStarted = False                             
 
     def findContourCenter(self, contour):
         moments = cv.moments(contour)
@@ -124,7 +125,11 @@ class cvGestures():
         for i in self.CommandTuple:
             if i[self.CmdTupleCounter] >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
                 gesture = i
-                ############FIX HERE????
+                if gesture[self.CmdTupleCommand] == Command.START and self.HasStarted is True:
+                    gesture = self.CommandTuple[5]
+                    self.HasStarted = False  
+                elif gesture[self.CmdTupleCommand] == Command.START:
+                    self.HasStarted = True
         return gesture
 
     def countGesture(self, gesture):
@@ -201,7 +206,7 @@ def main(argv):
             cv.imshow("show image",frame)
         if bBGCaptured is True:
             bgRemovedFrame = cvGesture.removeBackground(bgModel, frame)
-            cv.imshow("bg image", bgRemovedFrame) # debug
+            cv.imshow("background image", bgRemovedFrame) # debug
             grayFrame = cv.cvtColor(bgRemovedFrame, cv.COLOR_BGR2GRAY)
             blurFrame = cv.GaussianBlur(grayFrame, (cvGesture.gaussian_ksize, cvGesture.gaussian_ksize), cvGesture.gaussian_sigma)
             threshRV, threshFrame = cv.threshold(blurFrame, cvGesture.thresholdLowValue, cvGesture.thresholdMaxValue, cv.THRESH_BINARY)
