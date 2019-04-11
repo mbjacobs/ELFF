@@ -9,12 +9,13 @@ from enum import Enum
 import rospy 
 from std_msgs.msg import String
 
-class Gesture(Enum):
-    TOGGLESTART = 1
+class Command(Enum):
+    START = 1
     REVERSE = 2
     LEFT = 3
     RIGHT = 4
     SCOOP = 5
+    STOP = 6
 
 class DIRECTION(Enum):
     NORTH = 1
@@ -33,12 +34,19 @@ class cvGestures():
         self.gestureNumberOfFingersToggleStart = 5
         self.gestureNumberOfFingersReverseLeftRight = 1
         self.percentThresholdToQualifyGesture = 0.9
-        self.timeIncrement = 5
+        self.timeIncrement = 10
+
         self.ScoopCounter = 0
         self.ToggleCounter = 0
         self.ReverseCounter = 0
         self.LeftCounter = 0
         self.RightCounter = 0
+        self.CommandTuple = (  (Command.START, "START", ToggleCounter),
+                                (Command.REVERSE, "REVERSE", ReverseCounter),
+                                (Command.LEFT, "LEFT", LeftCounter),
+                                (Command.RIGHT, "RIGHT", RightCounter),
+                                (Command.SCOOP, "SCOOP", ScoopCounter),
+                                (Command.STOP, "STOP", ToggleCounter))                                )
 
     def findContourCenter(self, contour):
         moments = cv.moments(contour)
@@ -79,18 +87,6 @@ class cvGestures():
             direction = None
         return direction
 
-    def printCounters(self):
-        print("ScoopCounter:")
-        print(self.ScoopCounter)
-        print("ToggleCounter:")
-        print(self.ToggleCounter)
-        print("ReverseCounter:")
-        print(self.ReverseCounter)
-        print("LeftCounter:")
-        print(self.LeftCounter)
-        print("RightCounter:")
-        print(self.RightCounter)
-
     def resetCounters(self):
         self.ScoopCounter = 0
         self.ToggleCounter = 0
@@ -99,44 +95,29 @@ class cvGestures():
         self.RightCounter = 0
 
     def evaluateGestureOverTime (self):
-        if self.ScoopCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
-            gesture = Gesture.SCOOP
-        elif self.ToggleCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
-            gesture = Gesture.TOGGLESTART
-        elif self.ReverseCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
-            gesture = Gesture.REVERSE
-        elif self.LeftCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
-            gesture = Gesture.LEFT
-        elif self.RightCounter >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
-            gesture = Gesture.RIGHT
-        else:
-            gesture = None
+        gesture = None
+        for i in self.CommandTuple:
+            if i[2] >= (self.timeIncrement * self.percentThresholdToQualifyGesture):
+                gesture = i
         return gesture
 
     def countGesture(self, gesture):
-        if gesture is Gesture.TOGGLESTART:
-            self.ToggleCounter += 1
-        elif gesture is Gesture.SCOOP:
-            self.ScoopCounter += 1
-        elif gesture is Gesture.REVERSE:
-            self.ReverseCounter += 1
-        elif gesture is Gesture.LEFT:
-            self.LeftCounter += 1
-        elif gesture is Gesture.RIGHT:
-            self.RightCounter += 1
-
+        for i in self.CommandTuple:
+            if gesture in i[0]:
+                i[2] += 1
+            
     def identifyGesture(self, numFingers, direction):
         if (numFingers >= self.gestureNumberOfFingersToggleStart):
-            gesture = Gesture.TOGGLESTART
+            gesture = Command.START
         elif (numFingers == self.gestureNumberOfFingersScoop):
-            gesture = Gesture.SCOOP
+            gesture = Command.SCOOP
         elif (numFingers == self.gestureNumberOfFingersReverseLeftRight):
             if direction == DIRECTION.WEST:
-                gesture = Gesture.RIGHT
+                gesture = Command.RIGHT
             elif direction == DIRECTION.EAST:
-                gesture = Gesture.LEFT
+                gesture = Command.LEFT
             elif direction == DIRECTION.NORTH: 
-                gesture = Gesture.REVERSE
+                gesture = Command.REVERSE
             else:
                 gesture = None
         else:
@@ -185,20 +166,21 @@ class cvGestures():
     def publishGesture(self, gesture):
         rospy.init_node('topic_command_publisher', anonymous=True)
         pub = rospy.Publisher('motioncommand', String)
-        if gesture == Gesture.TOGGLESTART:
-            command = "TOGGLESTART"
-        elif gesture == Gesture.REVERSE:
-            command = "REVERSE"
-        elif gesture == Gesture.LEFT:
-            command = "LEFT"
-        elif gesture == Gesture.RIGHT:
-            command = "RIGHT"
-        elif gesture == Gesture.SCOOP:
-            command = "SCOOP"
-        else:
-            command = "NONE"
+        command = gesture[1]
         rospy.loginfo(command)
         pub.publish(command)
+
+    def printCounters(self):
+        print("ScoopCounter:")
+        print(self.ScoopCounter)
+        print("ToggleCounter:")
+        print(self.ToggleCounter)
+        print("ReverseCounter:")
+        print(self.ReverseCounter)
+        print("LeftCounter:")
+        print(self.LeftCounter)
+        print("RightCounter:")
+        print(self.RightCounter)
 
 
 def main(argv):
@@ -236,14 +218,12 @@ def main(argv):
                     print ("ITERATION")# debug
                     print (iteration)# debug
                     evaluatedGesture = cvGesture.evaluateGestureOverTime()
-                    if evaluatedGesture is not None:
-                        #cvGesture.publishGesture (evaluatedGesture)
+                    if evaluatedGesture is not None and evaluatedGesture:
+                        cvGesture.publishGesture (evaluatedGesture)
                         print("####################")# debug
                         print("EVALULATED GESTURE:")# debug
-                        print("####################")# debug
                         print (evaluatedGesture)# debug
-                        print("####################")# debug
-                        print("####################")# debug
+
                     counter = 0
                     cvGesture.resetCounters()
         keyPress = cv.waitKey(10)
