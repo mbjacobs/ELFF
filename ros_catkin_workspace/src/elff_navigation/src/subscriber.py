@@ -4,17 +4,17 @@ import video_dir
 import car_dir
 import motor
 import rospy
-from std_msgs.msg import String  #MJ012019: Don't know for sure if I need this, might be included in other packages...
+from std_msgs.msg import String  
 
 from socket import *
 from time import ctime          # Import necessary modules
 
-ctrl_cmd = ['TOGGLESTART', 'REVERSE', 'LEFT', 'RIGHT', 'SCOOP', 'read cpu_temp', 'home', 'distance', 'x+', 'x-', 'y+', 'y-', 'xy_home']
+ctrl_cmd = ['TOGGLESTART', 'REVERSE', 'LEFT', 'RIGHT', 'SCOOP', 'RESET']
 
-busnum = 1          # Edit busnum to 0, if you uses Raspberry Pi 1 or 0
+busnum = 1          
 
 #==============================================================
-# Establish the callback function and listener node for ROS
+# Establish the callback function for ROS
 #==============================================================
 def callback (data):
     rospy.loginfo (rospy.get_caller_id () + "Callback! Direction is %s", data.data)
@@ -25,9 +25,17 @@ class Direction:
 
     def direction_callback (self, msg):
         self.directionMsg = msg.data
-        print ("directionMsg is...", self.directionMsg) #debug
+        #print ("directionMsg is...", self.directionMsg) #debug
+
+#def doAction (data, counter):
+#Tried to move the nested loop in here but couldn't figure out why
+#things weren't working.
 
 def mover ():
+    #Init variables for the control loop
+    counter = 1
+    bDriving = False
+    bEndLoops = False
 
     sRobotDirection = Direction ()
 
@@ -40,95 +48,85 @@ def mover ():
     motor.setup(busnum=busnum)     # Initialize the Raspberry Pi GPIO connected to the DC motor.
     video_dir.home_x_y()
     car_dir.home()
+ 
+    while (bEndLoops == False): # Loop to wait for received commands.
+        
+        while (bEndLoops == False): # Loop to perform movement controls while input received.
 
-    counter = 1
+                data = sRobotDirection.directionMsg
 
-    while (counter != 20): #For debugging purpose to prevent blowing things up with an infinite loop
+                # Analyze the command received and control the car accordingly.
+                #doAction (data, counter)
+                #counter += 1
+                #print counter
+                
+                if not data:
+                    break
+                
+                if data == ctrl_cmd[0]: #and bDriving == False#:
+                        print 'ELFF WILL DRIVE'
+                        counter += 1
+                        print counter
+                       
+                        try:
+                                spd = 50
+                                print "Moving forward with speed!"
+                                motor.forwardWithSpeed (spd)
+                                #bDriving = True
+                        except:
+                                print 'Error speed =' + str (spd)
 
-            while (counter != 20): #See above
+               # elif data == ctrl_cmd[0] and bDriving == True:                            
+                #        print 'ELFF WILL STOP'
+                 #       motor.ctrl(0); #Stop the car
 
-                    data = sRobotDirection.directionMsg
+                elif data == ctrl_cmd[1]:
+                        print 'ELFF WILL REVERSE'
+                        counter += 1
+                        print counter
 
-                    # Analyze the command received and control the car accordingly.
-                    if not data:
-                            break
-                    if data == ctrl_cmd[0]:
-                            print 'ELLF WILL DRIVE'
-                            #motor.forward()
-                            counter += 1 #Debug
-                    elif data == ctrl_cmd[1]:
-                            print 'ELFF WILL REVERSE'
-                            #motor.backward()
-                    elif data == ctrl_cmd[2]:
-                            print 'ELFF WILL GO LEFT'
-                            #car_dir.turn_left()
-                    elif data == ctrl_cmd[3]:
-                            print 'ELFF WILL GO RIGHT'
-                            #car_dir.turn_right()
-                    elif data == ctrl_cmd[6]:
-                            print 'recv home cmd'
-                            #car_dir.home()
-                    elif data == ctrl_cmd[4:
-                            print 'ELFF WILL SCOOP'
-                            #motor.ctrl(0)
-                    elif data == ctrl_cmd[5]:
-                            print 'read cpu temp...'
-                            #temp = cpu_temp.read()
-                            #tcpCliSock.send('[%s] %0.2f' % (ctime(), temp))
-                    elif data == ctrl_cmd[8]:
-                            print 'recv x+ cmd'
-                            #video_dir.move_increase_x()
-                    elif data == ctrl_cmd[9]:
-                            print 'recv x- cmd'
-                            #video_dir.move_decrease_x()
-                    elif data == ctrl_cmd[10]:
-                            print 'recv y+ cmd'
-                            #video_dir.move_increase_y()
-                    elif data == ctrl_cmd[11]:
-                            print 'recv y- cmd'
-                            #video_dir.move_decrease_y()
-                    elif data == ctrl_cmd[12]:
-                            print 'home_x_y'
-                            #video_dir.home_x_y()
-                    #elif data[0:5] == 'speed':     # Change the speed
-                     #       print data
-                      #      numLen = len(data) - len('speed')
-                       #     if numLen == 1 or numLen == 2 or numLen == 3:
-                        #            tmp = data[-numLen:]
-                         #           print 'tmp(str) = %s' % tmp
-                          #          spd = int(tmp)
-                           #         print 'spd(int) = %d' % spd
-                            #        if spd < 24:
-                             #               spd = 24
-                              #      motor.setSpeed(spd)
-                   # elif data[0:5] == 'turn=':	#Turning Angle
-                    #        print 'data =', data
-                     #       angle = data.split('=')[1]
-                      #      try:
-                       #             angle = int(angle)
-                        #            car_dir.turn(angle)
-                         #   except:
-                          #          print 'Error: angle =', angle
-                    #elif data[0:8] == 'forward=':
-                     #       print 'data =', data
-                      #      spd = data[8:]
-                       #     try:
-                        #            spd = int(spd)
-                         #           motor.forward(spd)
-                          #  except:
-                           #         print 'Error speed =', spd
-                    #elif data[0:9] == 'backward=':
-                    #        print 'data =', data
-                    #        spd = data.split('=')[1]
-                    #        try:
-                    #                spd = int(spd)
-                    #                motor.backward(spd)
-                    #        except:
-                    #                print 'ERROR, speed =', spd
+                        try:
+                                spd = 50
+                                print "Moving backward with speed!"
+                                motor.backwardWithSpeed (spd)
+                        except:
+                                print 'Error speed =' + str (spd)
 
-                    else:
-                            print 'Command Error! Cannot recognize command: ' + sRobotDirection.directionMsg
+                elif data == ctrl_cmd[2]:
+                        print 'ELFF WILL GO LEFT'
+                        counter += 1
+                        car_dir.turn_left()
+
+                elif data == ctrl_cmd[3]:
+                        print 'ELFF WILL GO RIGHT'
+                        counter += 1
+                        car_dir.turn_right()
+
+               # elif data == ctrl_cmd[6]:
+                #        print 'recv home cmd'
+                 #       #car_dir.home()
+
+                elif data == ctrl_cmd[4]:
+                        print 'ELFF WILL SCOOP (BUT FOR NOW STOP MOTORS)'
+                        car_dir.home()
+                        motor.ctrl(0)
+                        
+                        bEndLoops = True
+                        ###video_dir.move_increase_y()
+
+                            
+                elif data == ctrl_cmd[5]: # Used with publisher.py only as a debug method.
+                        print 'ELFF WILL RESET POSITION'
+                        car_dir.home()
+                        motor.ctrl(0)
+                        bEndLoops = True
+
+                else:
+                        print 'Waiting to receive a command...'
+                        
     rospy.spin ()
+    #car_dir.home()
+
 
 if __name__=='__main__':
     mover ()
