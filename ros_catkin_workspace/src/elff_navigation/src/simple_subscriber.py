@@ -36,7 +36,7 @@ def mover ():
 
     rospy.init_node ('mover', anonymous = True)
 
-    rospy.Subscriber ("/motion_command", String, sRobotDirection.direction_callback)
+    rospy.Subscriber ("motioncommand", String, sRobotDirection.direction_callback)
 
     video_dir.setup(busnum=busnum)
     car_dir.setup(busnum=busnum)

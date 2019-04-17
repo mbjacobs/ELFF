@@ -5,7 +5,7 @@ from std_msgs.msg import String
 #from Tkinter import *
 from socket import *      # Import necessary modules
 
-ctrl_cmd = ['forward', 'backward', 'left', 'right', 'stop', 'read cpu_temp', 'home', 'distance', 'x+', 'x-', 'y+', 'y-', 'xy_home']
+ctrl_cmd = ['forward', 'backward', 'left', 'right', 'stop', 'read cpu_temp', 'home']
 
 #top = Tk()   # Create a top window
 #top.title('Sunfounder Raspberry Pi Smart Video Car')
@@ -14,6 +14,8 @@ ctrl_cmd = ['forward', 'backward', 'left', 'right', 'stop', 'read cpu_temp', 'ho
 # Define publisher node's interface to the rest of ROS
 # =============================================================================
 def gesture_recognizer ():
+    counter = 0
+    
     pub = rospy.Publisher ('motioncommand', String, queue_size=10)
     rospy.init_node ('gesture_recognizer', anonymous = True)
     rate = rospy.Rate (10)
@@ -22,8 +24,55 @@ def gesture_recognizer ():
         #motion_str = 'forward'
         #rospy.loginfo (motion_str)
         #pub.publish (motion_str)
-        forward_fun (pub)
+	#stop_fun (pub)
 
+	#while (counter < 2500):
+	    #forward_fun (pub)
+	    #counter += 1
+	    #print counter
+       
+        #stop_fun (pub)
+
+        #while (counter < 1000):
+         #   scoop_fun (pub)
+	 #   sleep (0.5)
+         #   counter += 1
+         #   print counter
+
+        
+        #stop_fun (pub) 
+
+	#while (counter < 5000):	
+	    #backward_fun (pub)
+	    #counter += 1
+	    #print counter
+        
+        #stop_fun (pub)
+	
+        #while (counter < 7500):
+	    #forward_fun (pub)
+	    #counter += 1
+	    #print counter
+
+        #left_fun (pub)
+        #left_fun (pub)
+
+        #while (counter < 10000):
+            #forward_fun (pub)
+            #counter += 1
+            #print counter
+	    
+        #right_fun (pub)
+        #right_fun (pub)
+
+        #while (counter < 12500):
+            #forward_fun (pub)
+            #counter += 1
+            #print counter
+
+	scoop_fun (pub)
+        print 'END DEMO'
+        
         rate.sleep ()
 
 # =============================================================================
@@ -31,50 +80,41 @@ def gesture_recognizer ():
 # car move forward.
 # =============================================================================
 def forward_fun (pub):
-	print 'forward'
-        motion_str = 'forward'
+	print 'TOGGLESTART'
+        motion_str = 'TOGGLESTART'
         rospy.loginfo (motion_str)
         pub.publish (motion_str)
 
-def backward_fun(event):
-	print 'backward'
-	tcpCliSock.send('backward')
+def backward_fun(pub):
+	print 'REVERSE'
+	motion_str = 'REVERSE'
+	rospy.loginfo (motion_str)
+        pub.publish (motion_str)
 
-def left_fun(event):
-	print 'left'
-	tcpCliSock.send('left')
+def left_fun(pub):
+	print 'LEFT'
+	motion_str = 'LEFT'
+	rospy.loginfo (motion_str)
+        pub.publish (motion_str)
 
-def right_fun(event):
-	print 'right'
-	tcpCliSock.send('right')
+def right_fun(pub):
+	print 'RIGHT'
+	motion_str = 'RIGHT'
+	rospy.loginfo (motion_str)
+        pub.publish (motion_str)
 
-def stop_fun(event):
-	print 'stop'
-	tcpCliSock.send('stop')
+def stop_fun(pub):
+	print 'RESET'
+        motion_str = 'RESET'
+	pub.publish (motion_str)
+
+def scoop_fun(pub):
+    print 'SCOOP'
+    motion_str='SCOOP'
+    pub.publish (motion_str)
 
 def home_fun(event):
 	print 'home'
-	tcpCliSock.send('home')
-
-def x_increase(event):
-	print 'x+'
-	tcpCliSock.send('x+')
-
-def x_decrease(event):
-	print 'x-'
-	tcpCliSock.send('x-')
-
-def y_increase(event):
-	print 'y+'
-	tcpCliSock.send('y+')
-
-def y_decrease(event):
-	print 'y-'
-	tcpCliSock.send('y-')
-
-def xy_home(event):
-	print 'xy_home'
-	tcpCliSock.send('xy_home')
 
 # =============================================================================
 # Exit the GUI program and close the network connection between the client
