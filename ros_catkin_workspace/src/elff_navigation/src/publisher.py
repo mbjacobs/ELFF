@@ -30,12 +30,16 @@ def gesture_recognizer ():
 	    #forward_fun (pub)
 	    #counter += 1
 	    #print counter
-        
-        while (counter < 100):
-            scoop_fun (pub)
-            counter += 1
-            print counter
+       
+        #stop_fun (pub)
 
+        #while (counter < 1000):
+         #   scoop_fun (pub)
+	 #   sleep (0.5)
+         #   counter += 1
+         #   print counter
+
+        
         #stop_fun (pub) 
 
 	#while (counter < 5000):	
@@ -66,7 +70,7 @@ def gesture_recognizer ():
             #counter += 1
             #print counter
 
-	stop_fun (pub)
+	scoop_fun (pub)
         print 'END DEMO'
         
         rate.sleep ()
@@ -84,21 +88,18 @@ def forward_fun (pub):
 def backward_fun(pub):
 	print 'REVERSE'
 	motion_str = 'REVERSE'
-	#tcpCliSock.send('REVERSE')
 	rospy.loginfo (motion_str)
         pub.publish (motion_str)
 
 def left_fun(pub):
 	print 'LEFT'
 	motion_str = 'LEFT'
-	#tcpCliSock.send('LEFT')
 	rospy.loginfo (motion_str)
         pub.publish (motion_str)
 
 def right_fun(pub):
 	print 'RIGHT'
 	motion_str = 'RIGHT'
-	#tcpCliSock.send('RIGHT')
 	rospy.loginfo (motion_str)
         pub.publish (motion_str)
 
@@ -114,8 +115,6 @@ def scoop_fun(pub):
 
 def home_fun(event):
 	print 'home'
-	t#cpCliSock.send('home')
-
 
 # =============================================================================
 # Exit the GUI program and close the network connection between the client

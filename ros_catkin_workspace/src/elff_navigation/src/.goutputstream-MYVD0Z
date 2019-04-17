@@ -25,7 +25,6 @@ class Direction:
 
     def direction_callback (self, msg):
         self.directionMsg = msg.data
-        #print ("directionMsg is...", self.directionMsg) #debug
 
 #def doAction (data, counter):
 #Tried to move the nested loop in here but couldn't figure out why
@@ -45,13 +44,17 @@ def mover ():
 
     video_dir.setup(busnum=busnum)
     car_dir.setup(busnum=busnum)
-    motor.setup(busnum=busnum)     # Initialize the Raspberry Pi GPIO connected to the DC motor.
+    
+    # Initialize the Raspberry Pi GPIO connected to the DC motor.
+    motor.setup(busnum=busnum)     
     video_dir.home_x_y()
     car_dir.home()
  
-    while (bEndLoops == False): # Loop to wait for received commands.
+    # Loop to wait for received commands.
+    while (bEndLoops == False): 
         
-        while (bEndLoops == False): # Loop to perform movement controls while input received.
+        # Loop to perform movement controls while input received.
+        while (bEndLoops == False): 
 
                 data = sRobotDirection.directionMsg
 
@@ -63,7 +66,7 @@ def mover ():
                 if not data:
                     break
                 
-                if data == ctrl_cmd[0]: #and bDriving == False#:
+                if data == ctrl_cmd[0]: 
                         print 'ELFF WILL DRIVE'
                         counter += 1
                         print counter
@@ -72,13 +75,8 @@ def mover ():
                                 spd = 50
                                 print "Moving forward with speed!"
                                 motor.forwardWithSpeed (spd)
-                                #bDriving = True
                         except:
                                 print 'Error speed =' + str (spd)
-
-               # elif data == ctrl_cmd[0] and bDriving == True:                            
-                #        print 'ELFF WILL STOP'
-                 #       motor.ctrl(0); #Stop the car
 
                 elif data == ctrl_cmd[1]:
                         print 'ELFF WILL REVERSE'
@@ -102,23 +100,20 @@ def mover ():
                         counter += 1
                         car_dir.turn_right()
 
-               # elif data == ctrl_cmd[6]:
-                #        print 'recv home cmd'
-                 #       #car_dir.home()
-
                 elif data == ctrl_cmd[4]:
-                        print 'ELFF WILL SCOOP (BUT FOR NOW STOP MOTORS)'
-                        car_dir.home()
-                        motor.ctrl(0)
-                        
-                        bEndLoops = True
-                        ###video_dir.move_increase_y()
+                        print 'ELFF WILL SCOOP'
+                        video_dir.move_decrease_y()
+                        video_dir.move_decrease_x()
 
+                        time.sleep(5)
+                        video_dir.move_increase_y()
+                        video_dir.move_increase_x()
                             
                 elif data == ctrl_cmd[5]: # Used with publisher.py only as a debug method.
                         print 'ELFF WILL RESET POSITION'
                         car_dir.home()
                         motor.ctrl(0)
+                        video_dir.home_x_y()
                         bEndLoops = True
 
                 else:
