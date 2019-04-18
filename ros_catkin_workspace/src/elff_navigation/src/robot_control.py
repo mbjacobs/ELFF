@@ -4,6 +4,7 @@ import scooper_dir
 import car_dir
 import motor
 import rospy
+import cv2 as cv
 from std_msgs.msg import String  
 
 from socket import *
@@ -131,7 +132,7 @@ def mover ():
                 else:
                         print 'Waiting to receive a command...'
 
-                # press ESC to exit 
+            # press ESC to exit 
                 keyPress = cv.waitKey(10)
                 if keyPress == 27:
                     bEndLoops = True
