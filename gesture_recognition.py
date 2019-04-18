@@ -245,17 +245,17 @@ def main(argv):
             bBGCaptured = True
             print( '!!!Background Captured!!!')
 
-        if keyPress == ord('w'):
+        if keyPress == ord('W'):
             cvGesture.publishGesture ("START")
-        if keyPress == ord('s'):
+        if keyPress == ord('S'):
             cvGesture.publishGesture ("REVERSE")
-        if keyPress == ord('q'):
+        if keyPress == ord('Q'):
             cvGesture.publishGesture ("STOP")
-        if keyPress == ord('d'):
+        if keyPress == ord('D'):
             cvGesture.publishGesture ("RIGHT")
-        if keyPress == ord('a'):
+        if keyPress == ord('A'):
             cvGesture.publishGesture ("LEFT")
-        if keyPress == ord('e'):
+        if keyPress == ord('E'):
             cvGesture.publishGesture ("SCOOP")
 
 if __name__ == '__main__':
