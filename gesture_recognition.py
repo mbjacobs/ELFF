@@ -227,7 +227,7 @@ def main(argv):
                     print (iteration)# debug
                     evaluatedGesture = cvGesture.evaluateGestureOverTime()
                     if evaluatedGesture is not None:
-                        #cvGesture.publishGesture (evaluatedGesture)
+                        cvGesture.publishGesture (evaluatedGesture)
                         print("EVALULATED GESTURE:")# debug
                         print (evaluatedGesture[1])# debug
                     counter = 0
@@ -244,6 +244,19 @@ def main(argv):
             bgModel = cvGesture.captureBackground()
             bBGCaptured = True
             print( '!!!Background Captured!!!')
+
+        if keyPress == ord('w'):
+            cvGesture.publishGesture ("START")
+        if keyPress == ord('s'):
+            cvGesture.publishGesture ("REVERSE")
+        if keyPress == ord('q'):
+            cvGesture.publishGesture ("STOP")
+        if keyPress == ord('d'):
+            cvGesture.publishGesture ("RIGHT")
+        if keyPress == ord('a'):
+            cvGesture.publishGesture ("LEFT")
+        if keyPress == ord('e'):
+            cvGesture.publishGesture ("SCOOP")
 
 if __name__ == '__main__':
     main(sys.argv)

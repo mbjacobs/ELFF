@@ -86,7 +86,7 @@ def mover ():
                         print counter
 
                         try:
-                                spd = 50
+                                spd = 20
                                 #print "Moving backward with speed!"
                                 motor.backwardWithSpeed (spd)
                         except:
@@ -128,9 +128,13 @@ def mover ():
                         except:
                                 print 'Error speed =' + str (spd)
 
-
                 else:
                         print 'Waiting to receive a command...'
+
+                # press ESC to exit 
+                keyPress = cv.waitKey(10)
+                if keyPress == 27:
+                    bEndLoops = True
                         
     rospy.spin ()
     #car_dir.home()
