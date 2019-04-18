@@ -132,11 +132,7 @@ def mover ():
                 else:
                         print 'Waiting to receive a command...'
 
-            # press ESC to exit 
-                keyPress = cv.waitKey(10)
-                if keyPress == 27:
-                    bEndLoops = True
-                        
+    
     #rospy.spin ()
     #car_dir.home()
 
