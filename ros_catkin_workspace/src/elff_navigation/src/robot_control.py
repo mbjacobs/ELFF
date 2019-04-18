@@ -9,7 +9,7 @@ from std_msgs.msg import String
 from socket import *
 from time import ctime          # Import necessary modules
 
-ctrl_cmd = ['TOGGLESTART', 'REVERSE', 'LEFT', 'RIGHT', 'SCOOP', 'RESET']
+ctrl_cmd = ['START', 'REVERSE', 'LEFT', 'RIGHT', 'SCOOP', 'RESET', 'STOP']
 
 busnum = 1          
 
@@ -74,7 +74,7 @@ def mover ():
                         print counter
                        
                         try:
-                                spd = 50
+                                spd = 20
                                 #print "Moving forward with speed!"
                                 motor.forwardWithSpeed (spd)
                         except:
@@ -117,6 +117,17 @@ def mover ():
                         motor.ctrl(0)
                                                 
                         bEndLoops = True
+
+                elif data == ctrl_cmd[6]:
+                        print 'ELFF WILL STOP'
+                        counter += 1
+                        print counter
+                        try:
+                                spd = 0
+                                motor.forwardWithSpeed (spd)
+                        except:
+                                print 'Error speed =' + str (spd)
+
 
                 else:
                         print 'Waiting to receive a command...'
