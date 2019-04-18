@@ -244,19 +244,6 @@ def main(argv):
             bgModel = cvGesture.captureBackground()
             bBGCaptured = True
             print( '!!!Background Captured!!!')
-
-        if keyPress == ord('W'):
-            cvGesture.publishGesture ("START")
-        if keyPress == ord('S'):
-            cvGesture.publishGesture ("REVERSE")
-        if keyPress == ord('Q'):
-            cvGesture.publishGesture ("STOP")
-        if keyPress == ord('D'):
-            cvGesture.publishGesture ("RIGHT")
-        if keyPress == ord('A'):
-            cvGesture.publishGesture ("LEFT")
-        if keyPress == ord('E'):
-            cvGesture.publishGesture ("SCOOP")
-
+            
 if __name__ == '__main__':
     main(sys.argv)
