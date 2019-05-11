@@ -8,7 +8,7 @@ Physically, ELFF is implemented using a [SunFounder Smart Video Car Kit](https:/
 
 # Code related things to know about this repository 
 - Read the report to get an understanding of how the system works
-- The code requires that you have set up your .bashrc on both machines appropriately ([here] (https://razbotics.wordpress.com/2018/01/23/ros-on-multiple-computers-connecting-raspberry-pi-with-pc-over-lan/))
+- The code requires that you have set up your .bashrc on both machines appropriately [here](https://razbotics.wordpress.com/2018/01/23/ros-on-multiple-computers-connecting-raspberry-pi-with-pc-over-lan/)
 - [gesture_recognition.py](./gesture_recognition.py) runs on the computer with webcam
 - [robot_control.py](/ros_catkin_workspace/src/elff_navigation/src/robot_control.py) runs on the raspberry pi on the robot
 - roscore will need to be running on whatever machine you set up to be the master node in the .bashrc files
