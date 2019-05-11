@@ -1,5 +1,6 @@
 # ELFF
-An assistive, gesture-controlled robot for item gathering
+An assistive, gesture-controlled robot for item gathering.
+
 Physically, ELFF is implemented using a [SunFounder Smart Video Car Kit](https://www.sunfounder.com/rpi-car.html) and a few 3D printed parts. 
 
 # Not code related things to know about this repository 
